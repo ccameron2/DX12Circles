@@ -83,6 +83,8 @@ void App::StartFrame()
 void App::LoadModels()
 {
 
+	masterBall = new Model("Models/sphere.x", mGraphics->mD3DDevice.Get(), mGraphics->mCommandList.Get());
+
 	for (auto& circle : circles->mMovingCircles)
 	{
 		Model* ballModel = new Model("Models/sphere.x", mGraphics->mD3DDevice.Get(), mGraphics->mCommandList.Get());
@@ -358,10 +360,21 @@ void App::CreateMaterials()
 	for (auto& model : mModels)
 	{
 		for (auto& mesh : model->mMeshes)
-		{
-			mesh->mMaterial->CBIndex = index;
-			mMaterials.push_back(mesh->mMaterial);
-			index++;
+		{/*
+			bool alreadyThere = false;
+			for (auto& mat : mMaterials)
+			{
+				if (mat->Name == mesh->mMaterial->Name)
+				{
+					alreadyThere = true;
+				}
+			}
+			if (!alreadyThere)
+			{*/
+				mesh->mMaterial->CBIndex = index;
+				mMaterials.push_back(mesh->mMaterial);
+				index++;
+			//}
 		}		
 	}
 }

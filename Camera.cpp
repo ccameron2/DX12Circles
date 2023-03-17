@@ -33,14 +33,14 @@ void Camera::MouseMoved(SDL_Event& event, Window* window)
 	else if (window->mRightMouse)
 	{
 		// Make each pixel correspond to 0.005 unit in the scene.
-		float dx = 0.05f * static_cast<float>(mouseX - mLastMousePos.x);
-		float dy = 0.05f * static_cast<float>(mouseY - mLastMousePos.y);
+		float dx = 0.1f * static_cast<float>(mouseX - mLastMousePos.x);
+		float dy = 0.1f * static_cast<float>(mouseY - mLastMousePos.y);
 
 		// Update the camera radius based on input.
 		mRadius += dx - dy;
 
 		// Restrict the radius.
-		mRadius = std::clamp(mRadius, 0.1f, 2000.0f);
+		mRadius = std::clamp(mRadius, 0.1f, 2500.0f);
 	}
 	mLastMousePos.x = mouseX;
 	mLastMousePos.y = mouseY;
@@ -65,6 +65,6 @@ void Camera::Update()
 void Camera::WindowResized(Window* window)
 {
 	// The window resized, so update the aspect ratio and recompute projection matrix
-	XMMATRIX proj = XMMatrixPerspectiveFovLH(0.25f * XM_PI, static_cast<float>(window->mWidth) / window->mHeight, 1.0f, 1000.0f);
+	XMMATRIX proj = XMMatrixPerspectiveFovLH(0.25f * XM_PI, static_cast<float>(window->mWidth) / window->mHeight, NearZ, FarZ);
 	XMStoreFloat4x4(&mProjectionMatrix, proj);
 }

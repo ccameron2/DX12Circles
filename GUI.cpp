@@ -39,31 +39,31 @@ void GUI::Update(int numModels)
 	//static bool showDemoWindow = false;
 	//ImGui::ShowDemoWindow(&showDemoWindow);
 
-	ImGui::Begin("Planet");
+	/*ImGui::Begin("Planet");
 
 	ImGui::Text("Geometry");
 
 	if (ImGui::SliderInt("LOD", &mLOD, 0, 10))
 	{
 		mPlanetUpdated = true;
-	};
+	};*/
 
 	//if (ImGui::Checkbox("Tesselation", &mTesselation))
 	//{
 	//	mUpdated = true;
 	//};
 
-	ImGui::Text("Noise");
+	//ImGui::Text("Noise");
 
-	if (ImGui::SliderFloat("Noise Freq", &mFrequency, 0.0f, 1.0f, "%.1f"))
-	{
-		mPlanetUpdated = true;
-	};
+	//if (ImGui::SliderFloat("Noise Freq", &mFrequency, 0.0f, 1.0f, "%.1f"))
+	//{
+	//	mPlanetUpdated = true;
+	//};
 
-	if (ImGui::SliderInt("Octaves", &mOctaves, 0, 20))
-	{
-		mPlanetUpdated = true;
-	};
+	//if (ImGui::SliderInt("Octaves", &mOctaves, 0, 20))
+	//{
+	//	mPlanetUpdated = true;
+	//};
 
 	ImGui::Text("World Matrix");
 

@@ -32,3 +32,4 @@
 
 /.vs
 /x64
+External/assimp/lib/Debug/assimp-vc143-mtd.lib
