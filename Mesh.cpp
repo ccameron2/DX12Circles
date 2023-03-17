@@ -33,7 +33,6 @@ void Mesh::CalculateDynamicBufferData()
 	mVertexByteStride = sizeof(Vertex);
 	mVertexBufferByteSize = vbByteSize;
 	mIndexBufferByteSize = ibByteSize;
-
 }
 
 void Mesh::Draw(ID3D12GraphicsCommandList* commandList)

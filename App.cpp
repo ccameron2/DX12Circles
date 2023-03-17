@@ -87,7 +87,8 @@ void App::LoadModels()
 
 	for (auto& circle : circles->mMovingCircles)
 	{
-		Model* ballModel = new Model("Models/sphere.x", mGraphics->mD3DDevice.Get(), mGraphics->mCommandList.Get());
+		//Model* ballModel = new Model("Models/sphere.x", mGraphics->mD3DDevice.Get(), mGraphics->mCommandList.Get());
+		Model* ballModel = new Model("", mGraphics->mD3DDevice.Get(), mGraphics->mCommandList.Get(),masterBall->mMeshes[0]);
 		ballModel->SetPosition(XMFLOAT3{ circle->mPosition.x,circle->mPosition.y,circle->mPosition.z });
 		//ballModel->SetScale(XMFLOAT3{ 0.1, 0.1, 0.1 });
 		mModels.push_back(ballModel);
@@ -96,7 +97,8 @@ void App::LoadModels()
 
 	for (auto& circle : circles->mStillCircles)
 	{
-		Model* ballModel = new Model("Models/sphere.x", mGraphics->mD3DDevice.Get(), mGraphics->mCommandList.Get());
+		//Model* ballModel = new Model("Models/sphere.x", mGraphics->mD3DDevice.Get(), mGraphics->mCommandList.Get());
+		Model* ballModel = new Model("", mGraphics->mD3DDevice.Get(), mGraphics->mCommandList.Get(), masterBall->mMeshes[0]);
 		ballModel->SetPosition(XMFLOAT3{ circle->mPosition.x,circle->mPosition.y,circle->mPosition.z });
 		//ballModel->SetScale(XMFLOAT3{ 0.1, 0.1, 0.1 });
 		mModels.push_back(ballModel);
@@ -357,26 +359,29 @@ void App::ProcessEvents(SDL_Event& event)
 void App::CreateMaterials()
 {
 	int index = 0;
-	for (auto& model : mModels)
-	{
-		for (auto& mesh : model->mMeshes)
-		{/*
-			bool alreadyThere = false;
-			for (auto& mat : mMaterials)
-			{
-				if (mat->Name == mesh->mMaterial->Name)
-				{
-					alreadyThere = true;
-				}
-			}
-			if (!alreadyThere)
-			{*/
-				mesh->mMaterial->CBIndex = index;
-				mMaterials.push_back(mesh->mMaterial);
-				index++;
-			//}
-		}		
-	}
+	masterBall->mMeshes[0]->mMaterial->CBIndex = 0;
+	mMaterials.push_back(masterBall->mMeshes[0]->mMaterial);
+
+	//for (auto& model : mModels)
+	//{
+	//	for (auto& mesh : model->mMeshes)
+	//	{/*
+	//		bool alreadyThere = false;
+	//		for (auto& mat : mMaterials)
+	//		{
+	//			if (mat->Name == mesh->mMaterial->Name)
+	//			{
+	//				alreadyThere = true;
+	//			}
+	//		}
+	//		if (!alreadyThere)
+	//		{*/
+	//			mesh->mMaterial->CBIndex = index;
+	//			mMaterials.push_back(mesh->mMaterial);
+	//			index++;
+	//		//}
+	//	}		
+	//}
 }
 
 App::~App()

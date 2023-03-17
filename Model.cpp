@@ -28,15 +28,15 @@ Model::Model(std::string fileName, ID3D12Device* device, ID3D12GraphicsCommandLi
 		mDirectory = fileName.substr(0, fileName.find_last_of('/'));
 		mFileName = fileName.substr(fileName.find_last_of('/') + 1, fileName.find_last_of('.') - fileName.find_last_of('/') - 1);
 		ProcessNode(scene->mRootNode, scene);
+
+		for (auto& mesh : mMeshes)
+		{
+			mesh->CalculateBufferData(device, commandList);
+		}
 	}
 	else
 	{
 		mMeshes.push_back(mesh);
-	}
-
-	for (auto& mesh : mMeshes)
-	{
-		mesh->CalculateBufferData(device, commandList);
 	}
 
 }

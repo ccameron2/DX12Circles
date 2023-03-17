@@ -3,7 +3,7 @@
 #include <random>
 #include <time.h> 
 #include <iostream>
-	
+
 float Sqrt(const float& n)
 {
 	static union { int i; float f; } u;
