@@ -75,6 +75,18 @@ void Window::ProcessEvents(SDL_Event& event)
 			}
 			mFullscreen = !mFullscreen;
 		}
+		if (key == SDLK_w) mW = true;
+		if (key == SDLK_s) mS = true;
+		if (key == SDLK_a) mA = true;
+		if (key == SDLK_d) mD = true;
+	}
+	else if (event.type == SDL_KEYUP)
+	{
+		auto key = event.key.keysym.sym;
+		if (key == SDLK_w) mW = false;
+		if (key == SDLK_s) mS = false;
+		if (key == SDLK_a) mA = false;
+		if (key == SDLK_d) mD = false;
 	}
 	else if (event.type == SDL_MOUSEMOTION)
 	{

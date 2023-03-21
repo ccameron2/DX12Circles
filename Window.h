@@ -28,8 +28,14 @@ public:
 	bool mKeyboardFocus = false;
 	bool mMinimized = false;
 	bool mQuit = false;
+
+	bool mW = false;
+	bool mA = false;
+	bool mS = false;
+	bool mD = false;
+
+
 	int mWidth;
 	int mHeight;
-
 };
 

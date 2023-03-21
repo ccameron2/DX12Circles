@@ -84,7 +84,6 @@ void App::StartFrame()
 
 void App::LoadModels()
 {
-
 	masterBall = new Model("Models/sphere.x", mGraphics->mD3DDevice.Get(), mGraphics->mCommandList.Get());
 	masterBall->mMeshes[0]->mMaterial = new Material();
 	masterBall->mMeshes[0]->mMaterial->DiffuseAlbedo = XMFLOAT4{ 1,0,1,0 };
@@ -135,7 +134,7 @@ void App::Update(float frameTime)
 
 	mCamera->Update();
 
-	circles->UpdateCircles(frameTime);
+	circles->UpdateCircles(/*frameTime*/);
 	for (int i = 0; i < NUM_CIRCLES / 2; i++)
 	{
 		mMovingModels[i]->SetPosition
@@ -362,6 +361,7 @@ void App::ProcessEvents(SDL_Event& event)
 		mCamera->MouseMoved(event,mWindow.get());
 		mWindow->mMouseMoved = false;
 	}
+
 }
 
 void App::CreateMaterials()

@@ -29,36 +29,91 @@ void Circles::UpdateCircles(float frameTime)
 	for (int i = 0; i < NUM_CIRCLES / 2; i++)
 	{
 		mMovingPositions[i] += mVelocities[i] * frameTime;
-		for (int j = 0; j < NUM_CIRCLES / 2; j++)
+	}
+
+	if (mThreaded)
+	{
+		auto movingPositions = &mMovingPositions[0];
+		// Distribute the work to the worker threads
+		for (uint32_t i = 0; i < mNumWorkers; ++i)
 		{
-			auto pos1 = mMovingPositions[i];
-			auto pos2 = mStillPositions[j];
-			// Calculate distance between circles (keep squared for performance)
-			auto distanceBetweenCirclesSquared = ((pos2.x - pos1.x) * (pos2.x - pos1.x)) + ((pos2.y - pos1.y) * (pos2.y - pos1.y));
-
-			// Check for collision
-			if (distanceBetweenCirclesSquared <= 400)
+			// Prepare a section of work (basically the parameters to the collision detection function)
+			auto& work = mBlockCirclesWorkers[i].second;
+			work.movingPositions = movingPositions;
+			work.numMovingCircles = (NUM_CIRCLES / 2) / (mNumWorkers + 1); // Add one because this main thread will also do some work
+			work.stillPositions = &mStillPositions[0];
+			work.numStillCircles = NUM_CIRCLES / 2;
+			work.startIndex = ((NUM_CIRCLES / 2) / (mNumWorkers + 1)) * i;
+			// Flag the work as not yet complete
+			auto& workerThread = mBlockCirclesWorkers[i].first;
 			{
-				// collision detected
-				mHealths[i] -= 20;
-				mHealths[j] -= 20;
-
-				mCollisions.push_back(Collision{ i, j });
-
-				// Calculate the normal vector pointing from c1 to c2
-				auto distance = Distance(pos1.x, pos1.y, pos2.x, pos2.y);
-				float nx = (pos2.x - pos1.x) / distance;
-				float ny = (pos2.y - pos1.y) / distance;
-
-				// v - 2 * (v . n) * n
-				Reflect(mVelocities[i].x, mVelocities[i].y, nx, ny);
+				// Guard every access to shared variable "work.complete" with a mutex (see BlockSpritesThread comments)
+				std::unique_lock<std::mutex> l(workerThread.lock);
+				work.complete = false;
 			}
+
+			// Notify the worker thread via a condition variable - this will wake the worker thread up
+			workerThread.workReady.notify_one();
+
+			// Move to next section of work
+			movingPositions += work.numMovingCircles;
 		}
+
+		// This main thread will also do one section of the work
+		uint32_t numRemainingParticles = (NUM_CIRCLES / 2) - static_cast<uint32_t>(movingPositions - &mMovingPositions[0]);
+		BlockCircles(movingPositions, numRemainingParticles, &mStillPositions[0], NUM_CIRCLES / 2, ((NUM_CIRCLES / 2) / (mNumWorkers + 1)) * mNumWorkers);
+
+		// Wait for all the workers to finish
+		for (uint32_t i = 0; i < mNumWorkers; ++i)
+		{
+			auto& workerThread = mBlockCirclesWorkers[i].first;
+			auto& work = mBlockCirclesWorkers[i].second;
+
+			// Wait for a signal via a condition variable indicating that the worker is complete
+			// See comments in BlockSpritesThread regarding the mutex and the wait method
+			std::unique_lock<std::mutex> l(workerThread.lock);
+			workerThread.workReady.wait(l, [&]() { return work.complete; });
+		}
+
+		// Continues here when *all* workers are complete
+
+		//***************************************************
+	}
+	else
+	{
+		BlockCircles(&mMovingPositions[0], NUM_CIRCLES / 2, &mStillPositions[0], NUM_CIRCLES / 2, 0);
+	}
+}
+
+Circles::~Circles()
+{
+	//*********************************************************
+	// Running threads must be joined to the main thread or detached before their destruction. If not
+	// the entire program immediately terminates (in fact the program is quiting here anyway, but if 
+	// std::terminate is called we probably won't get proper destruction). The worker threads never
+	// naturally exit so we can't use join. So in this case detach them prior to their destruction.
+	for (uint32_t i = 0; i < mNumWorkers; ++i)
+	{
+		mBlockCirclesWorkers[i].first.thread.detach();
 	}
 }
 
 void Circles::InitCircles()
 {
+	if (mThreaded)
+	{
+		//*********************************************************
+		// Start worker threads
+		mNumWorkers = std::thread::hardware_concurrency(); // Gives a hint about level of thread concurrency supported by system (0 means no hint given)
+		if (mNumWorkers == 0)  mNumWorkers = 8;
+		--mNumWorkers; // Decrease by one because this main thread is already running
+		for (uint32_t i = 0; i < mNumWorkers; ++i)
+		{
+			// Start each worker thread running the BlockSpritesThread method. Note the way to construct std::thread to run a member function
+			mBlockCirclesWorkers[i].first.thread = std::thread(&Circles::BlockCirclesThread, this, i);
+		}
+	}
+	
 	std::random_device rd; // obtain a random number from hardware
 	std::mt19937 gen(rd()); // seed the generator
 	std::uniform_int_distribution<> velDistr(-5, 5); // define the range
@@ -167,4 +222,80 @@ void Circles::ClearMemory()
 	delete mTimer;
 	for (int i = 0; i < NUM_CIRCLES / 2; i++) delete mMovingCircles[i];
 	for (int i = 0; i < NUM_CIRCLES / 2; i++) delete mStillCircles[i];
+}
+
+void Circles::BlockCircles(Float3* movingPositions, uint32_t numMovingCircles, Float3* stillPositions, uint32_t numStillCircles, uint32_t startIndex)
+{
+	auto movingEnd = movingPositions + numMovingCircles - 1;
+	auto stillEnd = stillPositions + numStillCircles - 1;
+	int movingIndex = startIndex;
+	while (movingPositions != movingEnd)
+	{
+		auto still = stillPositions;
+		int stillIndex = 0;
+		while (still != stillEnd)
+		{
+			auto distanceBetweenCirclesSquared = ((still->x - movingPositions->x) * (still->x - movingPositions->x))
+				+ ((still->y - movingPositions->y) * (still->y - movingPositions->y));
+
+			// Check for collision
+			if (distanceBetweenCirclesSquared <= 400)
+			{
+				// collision detected
+				//mHealths[i] -= 20;
+				//mHealths[j] -= 20;
+
+				//mCollisions.push_back(Collision{ movingIndex, stillIndex });
+
+				// Calculate the normal vector pointing from c1 to c2
+				auto distance = Distance(movingPositions->x, movingPositions->y, still->x, still->y);
+				float nx = (still->x - movingPositions->x) / distance;
+				float ny = (still->y - movingPositions->y) / distance;
+
+				// v - 2 * (v . n) * n
+				Reflect(mVelocities[movingIndex].x, mVelocities[movingIndex].y, nx, ny);
+			}
+			stillIndex++;
+			still++;
+		}		
+		movingIndex++;
+		movingPositions++;
+	}
+}
+
+void Circles::BlockCirclesThread(uint32_t thread)
+{
+	auto& worker = mBlockCirclesWorkers[thread].first;
+	auto& work = mBlockCirclesWorkers[thread].second;
+	while (true)
+	{
+		// In this system we need to communicate between the main thread and these worker threads.
+		// We need to indicate when work is ready, then reply when it is complete. We use "condition
+		// variables" for this. They are a method of receiving notifications between threads.
+		// Condition variables reqiuire a mutex to be held when using them. It protects the shared
+		// data that is used in the predicate ("work.complete" here). We don't want the other thread
+		// changing work.complete while we are reading it. 
+		// In practice, when we call "wait" the mutex is immediately released while waiting for the
+		// signal (workReady), it is aquired again when a signal arrives and the predicate is checked
+		// (work.complete). After wait finishes the mutex is still held. That is why there are curly
+		// brackets here to release the mutex (unique_lock works like unique_ptr, it releases the
+		// mutex when it goes out of scope). This system is tricky to fully appreciate at first.
+		{
+			std::unique_lock<std::mutex> l(worker.lock);
+			worker.workReady.wait(l, [&]() { return !work.complete; }); // Wait until a workReady signal arrives, then verify it by testing      
+			// that work.complete is false. The test is required because there is
+			// the possibility of "spurious wakeups": a false signal. Also in 
+			// some situations other threads may have eaten the work already.
+		}
+		// We have some work so do it...
+		BlockCircles(work.movingPositions, work.numMovingCircles, work.stillPositions, work.numStillCircles,work.startIndex);
+		{
+			// Flag the work is complete
+			// We also guard every normal access to shared variable "work.complete" with the same mutex
+			std::unique_lock<std::mutex> l(worker.lock);
+			work.complete = true;
+		}
+		// Send a signal back to the main thread to say the work is complete, loop back and wait for more work
+		worker.workReady.notify_one();
+	}
 }
