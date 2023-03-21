@@ -36,7 +36,7 @@ Model::Model(std::string fileName, ID3D12Device* device, ID3D12GraphicsCommandLi
 	}
 	else
 	{
-		mMeshes.push_back(mesh);
+		mConstructorMesh = mesh;
 	}
 
 }
@@ -73,6 +73,13 @@ void Model::Draw(ID3D12GraphicsCommandList* commandList)
 	tex.Offset(1, CbvSrvUavDescriptorSize);
 
 	commandList->SetGraphicsRootDescriptorTable(0, tex);
+
+	if (mConstructorMesh)
+	{
+		D3D12_GPU_VIRTUAL_ADDRESS matCBAddress = matCB->GetGPUVirtualAddress() + mConstructorMesh->mMaterial->CBIndex * matCBByteSize;
+		commandList->SetGraphicsRootConstantBufferView(3, matCBAddress);
+		mConstructorMesh->Draw(commandList);
+	}
 
 	for (auto mesh : mMeshes)
 	{

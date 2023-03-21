@@ -23,11 +23,12 @@ public:
 	XMFLOAT3 mScale = XMFLOAT3{ 1,1,1 };
 
 	void Draw(ID3D12GraphicsCommandList* commandList);
-
+	
 	void SetPosition(XMFLOAT3 position, bool update = true);
 	void SetRotation(XMFLOAT3 rotation, bool update = true);
 	void SetScale(XMFLOAT3 scale, bool update = true);
 	bool mParallax = false;
+	Mesh* mConstructorMesh;
 private:
 	void ProcessNode(aiNode* node, const aiScene* scene);
 	Mesh* ProcessMesh(aiMesh* mesh, const aiScene* scene);

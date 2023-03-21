@@ -63,8 +63,8 @@ public:
 	ComPtr<ID3D12RootSignature> mRootSignature;
 	FrameResource* mCurrentFrameResource = nullptr;
 	const static int mNumFrameResources = 3;
-
-	XMVECTORF32 mBackgroundColour = DirectX::Colors::Purple;
+	
+	XMVECTORF32 mBackgroundColour = XMVECTORF32{ 0.1f,0.1f,0.1f };
 
 	bool CreateDeviceAndFence();
 	void CreateRootSignature();

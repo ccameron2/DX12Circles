@@ -1,6 +1,9 @@
 #include "App.h"
 #include <memory>
-//using namespace DirectX;
+
+#pragma warning(disable : 4996)
+
+const bool VISUAL = true;
 
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE prevInstance, PSTR cmdLine, int showCmd)
 {
@@ -9,6 +12,26 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE prevInstance, PSTR cmdLine, in
     _CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
     #endif
 
-    auto app = std::make_unique<App>();
+    if (VISUAL)
+    {
+        auto app = std::make_unique<App>();
+    }
+    else
+    {
+        // Spawn a console
+        AllocConsole();
+        freopen("CONIN$", "r", stdin);
+        freopen("CONOUT$", "w", stdout);
+        freopen("CONOUT$", "w", stderr);
+
+        auto circles = new Circles();
+        circles->InitCircles();
+        while (true)
+        {
+            circles->UpdateCircles();
+            circles->OutputFrame();
+        }
+        circles->ClearMemory();
+    }
     return 0;
 }

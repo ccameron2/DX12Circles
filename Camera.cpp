@@ -33,8 +33,8 @@ void Camera::MouseMoved(SDL_Event& event, Window* window)
 	else if (window->mRightMouse)
 	{
 		// Make each pixel correspond to 0.005 unit in the scene.
-		float dx = 0.1f * static_cast<float>(mouseX - mLastMousePos.x);
-		float dy = 0.1f * static_cast<float>(mouseY - mLastMousePos.y);
+		float dx = 0.8f * static_cast<float>(mouseX - mLastMousePos.x);
+		float dy = 0.8f * static_cast<float>(mouseY - mLastMousePos.y);
 
 		// Update the camera radius based on input.
 		mRadius += dx - dy;

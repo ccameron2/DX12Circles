@@ -20,6 +20,8 @@ void App::Run()
 
 	// Set initial frame resources
 	mGraphics->CycleFrameResources();
+	
+	mCamera->WindowResized(mWindow.get());
 
 	while (!mWindow->mQuit)
 	{
@@ -85,27 +87,27 @@ void App::LoadModels()
 
 	masterBall = new Model("Models/sphere.x", mGraphics->mD3DDevice.Get(), mGraphics->mCommandList.Get());
 	masterBall->mMeshes[0]->mMaterial = new Material();
-	masterBall->mMeshes[0]->mMaterial->DiffuseAlbedo = XMFLOAT4{ 0,0,1,0 };
+	masterBall->mMeshes[0]->mMaterial->DiffuseAlbedo = XMFLOAT4{ 1,0,1,0 };
 
 	masterBall2 = new Model("Models/sphere.x", mGraphics->mD3DDevice.Get(), mGraphics->mCommandList.Get());
 	masterBall2->mMeshes[0]->mMaterial = new Material();
-	masterBall2->mMeshes[0]->mMaterial->DiffuseAlbedo = XMFLOAT4{ 1,0.5,0,0 };
+	masterBall2->mMeshes[0]->mMaterial->DiffuseAlbedo = XMFLOAT4{ 1,0.8,0,0 };
 
-	for (auto& circle : circles->mMovingCircles)
+	for (int i = 0; i < NUM_CIRCLES / 2; i++)
 	{
 		//Model* ballModel = new Model("Models/sphere.x", mGraphics->mD3DDevice.Get(), mGraphics->mCommandList.Get());
 		Model* ballModel = new Model("", mGraphics->mD3DDevice.Get(), mGraphics->mCommandList.Get(),masterBall->mMeshes[0]);
-		ballModel->SetPosition(XMFLOAT3{ circle->mPosition.x,circle->mPosition.y,circle->mPosition.z });
+		ballModel->SetPosition(XMFLOAT3{ circles->mMovingPositions[i].x,circles->mMovingPositions[i].y,circles->mMovingPositions[i].z });
 		//ballModel->SetScale(XMFLOAT3{ 0.1, 0.1, 0.1 });
 		mModels.push_back(ballModel);
 		mMovingModels.push_back(ballModel);
 	}
 
-	for (auto& circle : circles->mStillCircles)
+	for (int i = 0; i < NUM_CIRCLES / 2; i++)
 	{
 		//Model* ballModel = new Model("Models/sphere.x", mGraphics->mD3DDevice.Get(), mGraphics->mCommandList.Get());
 		Model* ballModel = new Model("", mGraphics->mD3DDevice.Get(), mGraphics->mCommandList.Get(), masterBall2->mMeshes[0]);
-		ballModel->SetPosition(XMFLOAT3{ circle->mPosition.x,circle->mPosition.y,circle->mPosition.z });
+		ballModel->SetPosition(XMFLOAT3{ circles->mStillPositions[i].x,circles->mStillPositions[i].y,circles->mStillPositions[i].z });
 		//ballModel->SetScale(XMFLOAT3{ 0.1, 0.1, 0.1 });
 		mModels.push_back(ballModel);
 		mStillModels.push_back(ballModel);
@@ -134,28 +136,28 @@ void App::Update(float frameTime)
 	mCamera->Update();
 
 	circles->UpdateCircles(frameTime);
-	for (int i = 0; i < mMovingModels.size() - 1; i++)
+	for (int i = 0; i < NUM_CIRCLES / 2; i++)
 	{
 		mMovingModels[i]->SetPosition
 		(
-			XMFLOAT3{ circles->mMovingCircles[i]->mPosition.x, circles->mMovingCircles[i]->mPosition.y, circles->mMovingCircles[i]->mPosition.z }
+			XMFLOAT3{ circles->mMovingPositions[i].x, circles->mMovingPositions[i].y, circles->mMovingPositions[i].z }
 		);
 		mMovingModels[i]->mNumDirtyFrames += FrameResources.size();
 	}
-	for (int i = 0; i < mStillModels.size() - 1; i++)
+	for (int i = 0; i < NUM_CIRCLES / 2; i++)
 	{
 		mStillModels[i]->SetPosition
 		(
-			XMFLOAT3{ circles->mStillCircles[i]->mPosition.x, circles->mStillCircles[i]->mPosition.y, circles->mStillCircles[i]->mPosition.z }
+			XMFLOAT3{ circles->mStillPositions[i].x, circles->mStillPositions[i].y, circles->mStillPositions[i].z }
 		);
 		mMovingModels[i]->mNumDirtyFrames += FrameResources.size();
 	}
 
-	if (circles->mCollisions.size() > 0)
-	{
-		circles->OutputFrame();
-		std::cout << "Frame finished in: " << frameTime << std::endl;
-	}
+	//if (circles->mCollisions.size() > 0)
+	//{
+	//	circles->OutputFrame();
+	//	std::cout << "Frame finished in: " << frameTime << std::endl;
+	//}
 
 	UpdateSelectedModel();
 	UpdatePerObjectConstantBuffers();
