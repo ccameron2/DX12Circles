@@ -1,7 +1,7 @@
 #pragma once
 #include <vector>
 
-const int NUM_CIRCLES = 500;
+const int NUM_CIRCLES = 5000;
 class Circles
 {
 private:

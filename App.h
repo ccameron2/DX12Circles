@@ -93,6 +93,7 @@ private:
 	unique_ptr<GUI> mGUI;
 
 	Model* masterBall;
+	Model* masterBall2;
 
 	float mSunTheta = 1.25f * XM_PI;
 	float mSunPhi = XM_PIDIV4;

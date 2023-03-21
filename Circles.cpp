@@ -45,7 +45,7 @@ void Circles::UpdateCircles(float frameTime)
 			auto distanceBetweenCirclesSquared = ((pos2.x - pos1.x) * (pos2.x - pos1.x)) + ((pos2.y - pos1.y) * (pos2.y - pos1.y));
 
 			// Check for collision
-			if (distanceBetweenCirclesSquared <= 100)
+			if (distanceBetweenCirclesSquared <= 200)
 			{
 				// collision detected
 				circle->mHealth -= 20;

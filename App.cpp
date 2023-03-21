@@ -84,6 +84,12 @@ void App::LoadModels()
 {
 
 	masterBall = new Model("Models/sphere.x", mGraphics->mD3DDevice.Get(), mGraphics->mCommandList.Get());
+	masterBall->mMeshes[0]->mMaterial = new Material();
+	masterBall->mMeshes[0]->mMaterial->DiffuseAlbedo = XMFLOAT4{ 0,0,1,0 };
+
+	masterBall2 = new Model("Models/sphere.x", mGraphics->mD3DDevice.Get(), mGraphics->mCommandList.Get());
+	masterBall2->mMeshes[0]->mMaterial = new Material();
+	masterBall2->mMeshes[0]->mMaterial->DiffuseAlbedo = XMFLOAT4{ 1,0.5,0,0 };
 
 	for (auto& circle : circles->mMovingCircles)
 	{
@@ -98,7 +104,7 @@ void App::LoadModels()
 	for (auto& circle : circles->mStillCircles)
 	{
 		//Model* ballModel = new Model("Models/sphere.x", mGraphics->mD3DDevice.Get(), mGraphics->mCommandList.Get());
-		Model* ballModel = new Model("", mGraphics->mD3DDevice.Get(), mGraphics->mCommandList.Get(), masterBall->mMeshes[0]);
+		Model* ballModel = new Model("", mGraphics->mD3DDevice.Get(), mGraphics->mCommandList.Get(), masterBall2->mMeshes[0]);
 		ballModel->SetPosition(XMFLOAT3{ circle->mPosition.x,circle->mPosition.y,circle->mPosition.z });
 		//ballModel->SetScale(XMFLOAT3{ 0.1, 0.1, 0.1 });
 		mModels.push_back(ballModel);
@@ -358,10 +364,10 @@ void App::ProcessEvents(SDL_Event& event)
 
 void App::CreateMaterials()
 {
-	int index = 0;
 	masterBall->mMeshes[0]->mMaterial->CBIndex = 0;
 	mMaterials.push_back(masterBall->mMeshes[0]->mMaterial);
-
+	masterBall2->mMeshes[0]->mMaterial->CBIndex = 1;
+	mMaterials.push_back(masterBall2->mMeshes[0]->mMaterial);
 	//for (auto& model : mModels)
 	//{
 	//	for (auto& mesh : model->mMeshes)
