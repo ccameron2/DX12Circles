@@ -4,7 +4,7 @@
 #include <thread>
 #include <condition_variable>
 
-const int NUM_CIRCLES = 60000;
+const int NUM_CIRCLES = 20000;
 const int MAX_POS = 5000;
 const int MIN_POS = -5000;
 

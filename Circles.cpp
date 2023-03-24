@@ -129,22 +129,12 @@ void Circles::InitCircles()
 		circle->mIndex = i;
 		bool posChecked = false;
 		bool isSame = false;
-		while (!posChecked)
-		{
-			// Set random value for position
-			xrand = posDistr(gen);
-			yrand = posDistr(gen);
-			position = Float3{ xrand,yrand,0 };
-/*			for (auto pos : usedPositions)
-			{
-				if (pos == position)
-				{
-					isSame = true;
-					break;
-				}
-			}
-			if (!isSame) */posChecked = true;
-		}
+
+		// Set random value for position
+		xrand = posDistr(gen);
+		yrand = posDistr(gen);
+		position = Float3{ xrand,yrand,0 };
+
 		mMovingPositions[i] = position;
 
 		circle->mRadius = 10;
@@ -173,22 +163,12 @@ void Circles::InitCircles()
 
 		bool posChecked = false;
 		bool isSame = false;
-		while (!posChecked)
-		{
-			// Set random value for position
-			xrand = posDistr(gen);
-			yrand = posDistr(gen);
-			position = Float3{ xrand,yrand,0 };
-/*			for (auto pos : usedPositions)
-			{
-				if (pos == position)
-				{
-					isSame = true;
-					break;
-				}
-			}
-			if (!isSame)*/ posChecked = true;
-		}
+		
+		// Set random value for position
+		xrand = posDistr(gen);
+		yrand = posDistr(gen);
+		position = Float3{ xrand,yrand,0 };
+		posChecked = true;
 
 		mStillPositions[i] = position;
 
@@ -231,12 +211,16 @@ void Circles::BlockCircles(Float3* movingPositions, uint32_t numMovingCircles, F
 	int movingIndex = startIndex;
 	while (movingPositions != movingEnd)
 	{
+		auto x1 = movingPositions->x;
+		auto y1 = movingPositions->y;
+
 		auto still = stillPositions;
 		int stillIndex = 0;
 		while (still != stillEnd)
 		{
-			auto distanceBetweenCirclesSquared = ((still->x - movingPositions->x) * (still->x - movingPositions->x))
-				+ ((still->y - movingPositions->y) * (still->y - movingPositions->y));
+			auto x2 = still->x;
+			auto y2 = still->y;
+			auto distanceBetweenCirclesSquared = ((x2 - x1) * (x2 - x1)) + ((y2 - y1) * (y2 - y1));
 
 			// Check for collision
 			if (distanceBetweenCirclesSquared <= 400)
@@ -248,9 +232,9 @@ void Circles::BlockCircles(Float3* movingPositions, uint32_t numMovingCircles, F
 				//mCollisions.push_back(Collision{ movingIndex, stillIndex });
 
 				// Calculate the normal vector pointing from c1 to c2
-				auto distance = Distance(movingPositions->x, movingPositions->y, still->x, still->y);
-				float nx = (still->x - movingPositions->x) / distance;
-				float ny = (still->y - movingPositions->y) / distance;
+				auto distance = Distance(x1, y1, x2, y2);
+				float nx = (x2 - x1) / distance;
+				float ny = (y2 - y1) / distance;
 
 				// v - 2 * (v . n) * n
 				Reflect(mVelocities[movingIndex].x, mVelocities[movingIndex].y, nx, ny);

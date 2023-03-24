@@ -105,7 +105,7 @@ void GUI::Update(int numModels)
 	mInScale.y = mScale;
 	mInScale.z = mScale;
 
-	//ImGui::End();
+	ImGui::End();
 
 }
 
