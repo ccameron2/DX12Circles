@@ -216,6 +216,41 @@ void Circles::BlockCircles(Float3* movingPositions, uint32_t numMovingCircles, F
 
 		auto still = stillPositions;
 		int stillIndex = 0;
+
+		int maxPos = MAX_POS + 100;
+		int minPos = MIN_POS - 100;
+
+		bool wallCollision = false;
+		bool wallLeftCollision = false;
+		bool wallRightCollision = false;
+		bool wallUpCollision = false;
+		bool wallDownCollision = false;
+
+		if		(x1 >= maxPos){wallRightCollision = true; wallCollision = true;}
+		else if (y1 >= maxPos){wallUpCollision = true;	  wallCollision = true;}
+		else if (x1 <= minPos){wallLeftCollision = true;  wallCollision = true;}
+		else if (y1 <= minPos){wallDownCollision = true;  wallCollision = true; }
+
+		if (wallCollision)
+		{
+			int x2 = 0;
+			int y2 = 0;
+			
+			if (wallLeftCollision) { x2 = minPos;  y2 = y1; }
+			else if (wallRightCollision) { x2 = maxPos; y2 = y1; }
+			else if (wallUpCollision) { x2 = x1; y2 = maxPos; }
+			else if (wallDownCollision) { x2 = x1; y2 = minPos; }
+
+			// Calculate the normal vector pointing from c1 to c2
+			auto distance = Distance(x1, y1, x2, y2);
+			float nx = (x2 - x1) / distance;
+			float ny = (y2 - y1) / distance;
+
+			// v - 2 * (v . n) * n
+			Reflect(mVelocities[movingIndex].x, mVelocities[movingIndex].y, nx, ny);
+		}
+
+
 		while (still != stillEnd)
 		{
 			auto x2 = still->x;
