@@ -75,18 +75,23 @@ void Window::ProcessEvents(SDL_Event& event)
 			}
 			mFullscreen = !mFullscreen;
 		}
-		if (key == SDLK_w) mW = true;
-		if (key == SDLK_s) mS = true;
-		if (key == SDLK_a) mA = true;
-		if (key == SDLK_d) mD = true;
+		if (key == SDLK_F1) mWireframe = !mWireframe;
+		if (key == SDLK_w) mForward = true;
+		if (key == SDLK_s) mBackward = true;
+		if (key == SDLK_a) mLeft = true;
+		if (key == SDLK_d) mRight = true;
+		if (key == SDLK_q) mDown = true;
+		if (key == SDLK_e) mUp = true;
 	}
 	else if (event.type == SDL_KEYUP)
 	{
 		auto key = event.key.keysym.sym;
-		if (key == SDLK_w) mW = false;
-		if (key == SDLK_s) mS = false;
-		if (key == SDLK_a) mA = false;
-		if (key == SDLK_d) mD = false;
+		if (key == SDLK_w) mForward = false;
+		if (key == SDLK_s) mBackward = false;
+		if (key == SDLK_a) mLeft = false;
+		if (key == SDLK_d) mRight = false;
+		if (key == SDLK_q) mDown = false;
+		if (key == SDLK_e) mUp = false;
 	}
 	else if (event.type == SDL_MOUSEMOTION)
 	{
@@ -107,6 +112,10 @@ void Window::ProcessEvents(SDL_Event& event)
 		if (event.button.button == 3) { mRightMouse = false; }
 		else if (event.button.button == 1) { mLeftMouse = false; }
 		else if (event.button.button == 2) { mMiddleMouse = false; }
+	}
+	else if (event.type == SDL_MOUSEWHEEL)
+	{
+		mScrollValue = event.wheel.y;
 	}
 }
 

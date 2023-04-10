@@ -28,14 +28,16 @@ public:
 	bool mKeyboardFocus = false;
 	bool mMinimized = false;
 	bool mQuit = false;
-
-	bool mW = false;
-	bool mA = false;
-	bool mS = false;
-	bool mD = false;
-
-
+	bool mForward = false;
+	bool mBackward = false;
+	bool mLeft = false;
+	bool mRight = false;
+	bool mUp = false;
+	bool mDown = false;
+	bool mWireframe = false;
+	float mScrollValue = 0.0f;
 	int mWidth;
 	int mHeight;
+
 };
 

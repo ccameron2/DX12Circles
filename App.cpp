@@ -132,7 +132,20 @@ void App::Update(float frameTime)
 
 	mGUI->Update(mNumModels);
 
-	mCamera->Update();
+	mCamera->Update(frameTime,mGUI->mCameraOrbit,mGUI->mInvertY);
+
+	if (mWindow->mScrollValue != 0)
+	{
+		mCamera->UpdateSpeed(mWindow->mScrollValue);
+		mWindow->mScrollValue = 0;
+	}
+	if (mWindow->mForward)	mCamera->MoveForward();
+	if (mWindow->mBackward) mCamera->MoveBackward();
+	if (mWindow->mLeft)	mCamera->MoveLeft();
+	if (mWindow->mRight) mCamera->MoveRight();
+	if (mWindow->mUp)	mCamera->MoveUp();
+	if (mWindow->mDown)	mCamera->MoveDown();
+
 
 	circles->UpdateCircles(/*frameTime*/);
 	for (int i = 0; i < NUM_CIRCLES / 2; i++)
