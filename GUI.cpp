@@ -39,39 +39,66 @@ void GUI::Update(int numModels)
 	//static bool showDemoWindow = false;
 	//ImGui::ShowDemoWindow(&showDemoWindow);
 
-	/*ImGui::Begin("Planet");
+	ImGui::Begin("Planet");
 
 	ImGui::Text("Geometry");
 
-	if (ImGui::SliderInt("LOD", &mLOD, 0, 10))
+	if (ImGui::InputInt("Seed", &mSeed, 1, 10))
 	{
 		mPlanetUpdated = true;
-	};*/
+	}
 
-	//if (ImGui::Checkbox("Tesselation", &mTesselation))
-	//{
-	//	mUpdated = true;
-	//};
+	if (ImGui::Checkbox("CLOD", &mCLOD))
+	{
+		mPlanetUpdated = true;
 
-	//ImGui::Text("Noise");
+	}
 
-	//if (ImGui::SliderFloat("Noise Freq", &mFrequency, 0.0f, 1.0f, "%.1f"))
-	//{
-	//	mPlanetUpdated = true;
-	//};
+	if (mCLOD) mMaxLOD = 6;
+	else mMaxLOD = 4;
 
-	//if (ImGui::SliderInt("Octaves", &mOctaves, 0, 20))
-	//{
-	//	mPlanetUpdated = true;
-	//};
+	if (mLOD > mMaxLOD) mLOD = mMaxLOD;
+
+	if (ImGui::SliderInt("LOD", &mLOD, 0, mMaxLOD))
+	{
+		mPlanetUpdated = true;
+	};
+
+	ImGui::Text("Noise");
+
+	if (ImGui::SliderFloat("Noise Freq", &mFrequency, 0.0f, 1.0f, "%.1f"))
+	{
+		mPlanetUpdated = true;
+	};
+
+	if (ImGui::SliderInt("Octaves", &mOctaves, 0, 20))
+	{
+		mPlanetUpdated = true;
+	};
 
 	ImGui::Text("World Matrix");
 
-	if (ImGui::SliderInt("Model", &mSelectedModel, 0, numModels - 1))
+	if (ImGui::SliderInt("Model", &mSelectedModel, 1, numModels - 1))
 	{
 
 	};
 
+	if (ImGui::SliderInt("TexDebug", &mDebugTex, 0, 7));
+	string str = "";
+	
+	
+	if (mDebugTex == 0) str = "PBR";
+	else if (mDebugTex == 1) str = "Albedo";
+	else if (mDebugTex == 2) str = "Roughness";
+	else if (mDebugTex == 3) str = "Normal";
+	else if (mDebugTex == 4) str = "Metalness";
+	else if (mDebugTex == 5) str = "Height";
+	else if (mDebugTex == 6) str = "AO";
+	else if (mDebugTex == 7) str = "Emissive";
+	else str = "error";
+
+	ImGui::Text(str.c_str());
+	
 	if (ImGui::InputFloat3("Position", mPos, "%.1f"))
 	{
 		mWMatrixChanged = true;
@@ -89,10 +116,19 @@ void GUI::Update(int numModels)
 
 	if (ImGui::Checkbox("VSync", &mVSync));
 
-	if (ImGui::Checkbox("Camera Orbit", &mCameraOrbit));
-	if (!mCameraOrbit) if (ImGui::Checkbox("Invert Y", &mInvertY));
+	if (ImGui::Checkbox("Orbit Camera", &mCameraOrbit));
+	if(!mCameraOrbit) if (ImGui::Checkbox("Invert Y", &mInvertY));
 
-	if (ImGui::SliderFloat3("Light Direction", mLightDir, -1, +1));
+	if (ImGui::InputFloat("Speed Mul", &mSpeedMultipler, 1.0f, 10.0f, "%.1f"))
+	{
+		if (mSpeedMultipler <= 0)
+		{
+			mSpeedMultipler = 0.1f;
+		}
+		mWMatrixChanged = true;
+	}
+
+	if (ImGui::SliderFloat3("Light Dir", mLightDir, -1, +1));
 
 	ImGui::Text("Average: %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
 
@@ -150,7 +186,7 @@ void GUI::Render(ID3D12GraphicsCommandList* commandList, ID3D12Resource* current
 
 bool GUI::ProcessEvents(SDL_Event& event)
 {
-	//Window event occured
+	// Window event occured
 	ImGuiIO& io = ImGui::GetIO();
 	ImGui_ImplSDL2_ProcessEvent(&event);
 	if (io.WantCaptureMouse || io.WantCaptureKeyboard)

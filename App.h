@@ -23,8 +23,12 @@
 #include <memory>
 #include "Common.h"
 
+#include <thread>
+#include <condition_variable>
+
 #include "Planet.h"
 #include "Model.h"
+#include "Circles.h"
 
 #include <SDL.h>
 #include <imgui.h>
@@ -36,8 +40,6 @@
 #include "Window.h"
 #include "Camera.h"
 
-#include "Circles.h"
-
 #include "Timer.h"
 #include "Utility.h"
 #include "Icosahedron.h"
@@ -45,8 +47,6 @@
 #include "UploadBuffer.h"
 #include "FrameResource.h"
 #include "SRVDescriptorHeap.h"
-#include <WICTextureLoader.h>
-#include <ResourceUploadBatch.h>
 
 #include <fstream>
 
@@ -63,48 +63,72 @@ class App
 public:
 	App();
 
-	// Flush command queue to prevent GPU crash on exit
 	~App();
-
+private:
 	void Run();
 
 	void Initialize();
-private:
+
 	Timer mTimer;
-	Circles* circles;
+
 	void Update(float frameTime);
 	void Draw(float frameTime);
+
 	void ProcessEvents(SDL_Event& e);
+
 	void CreateMaterials();
-	
-	vector<Texture*> mTextures;
+
+	void CreateSkybox();
+
+	// List of materials
 	vector<Material*> mMaterials;
+	
+	// Sky and water models
+	Model* mSkyModel;
+	Model* mWaterModel;
 
+	// Sky material
+	Material* mSkyMat;
+
+	// Graphics object
 	unique_ptr<Graphics> mGraphics;
+	
+	// Window object
 	unique_ptr<Window> mWindow;
-	SDL_Surface mScreenSurface;
 
-	// If diffent PSOs needed then use different lists
+	Circles* mCircles;
+
+	// Lists of models by PSO
 	vector<Model*> mModels;
+	vector<Model*> mTexModels;
+	vector<Model*> mSimpleTexModels;
+	vector<Model*> mColourModels;
+
+
+	Model* mMasterBall;
+	Model* mMasterBall2;
 	vector<Model*> mMovingModels;
 	vector<Model*> mStillModels;
 
+	int mNumModels = 0;
+
+	// Camera object
 	unique_ptr<Camera> mCamera;
+
+	// GUI object
 	unique_ptr<GUI> mGUI;
 
-	Model* masterBall;
-	Model* masterBall2;
-
+	// Light values
 	float mSunTheta = 1.25f * XM_PI;
 	float mSunPhi = XM_PIDIV4;
 
-	int mNumModels = 0;
-
+	// Wireframe mode
 	bool mWireframe = false;
 
-	// Input layout
-	ID3D12PipelineState* mCurrentPSO = nullptr;
+	// Current material index
+	int mCurrentMatCBIndex = 0;
 
+	void LoadModels();
 	void UpdateSelectedModel();
 	void UpdatePerObjectConstantBuffers();
 	void UpdatePerFrameConstantBuffer();
@@ -112,8 +136,29 @@ private:
 
 	void BuildFrameResources();
 
-	void LoadModels();
+	void DrawPlanet(ID3D12GraphicsCommandList* commandList);
 	void DrawModels(ID3D12GraphicsCommandList* commandList);
 	void StartFrame();
 	void EndFrame();
+
+	void RenderThread(int thread);
+	void RenderCircles(int thread, int start, int end);
+
+	struct WorkerThread
+	{
+		std::thread             thread;
+		std::condition_variable workReady;
+		std::mutex              lock;
+	};
+
+	struct RenderWork
+	{
+		bool complete = true;
+		int  start = 0;
+		int  end = 0;
+	};
+
+	static const int MAX_WORKERS = 128;
+	std::pair<WorkerThread, RenderWork> mRenderWorkers[MAX_WORKERS];
+	int mNumRenderWorkers = 0;
 };

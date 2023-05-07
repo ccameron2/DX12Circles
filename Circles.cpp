@@ -84,6 +84,66 @@ void Circles::UpdateCircles(float frameTime)
 		BlockCircles(&mMovingPositions[0], NUM_CIRCLES / 2, &mStillPositions[0], NUM_CIRCLES / 2, 0);
 	}
 }
+void Circles::UpdateCircles(float frameTime)
+{
+	for (int i = 0; i < NUM_CIRCLES / 2; i++)
+	{
+		mMovingPositions[i] += mVelocities[i] * frameTime;
+	}
+
+	if (mThreaded)
+	{
+		auto movingPositions = &mMovingPositions[0];
+		// Distribute the work to the worker threads
+		for (uint32_t i = 0; i < mNumWorkers; ++i)
+		{
+			// Prepare a section of work (basically the parameters to the collision detection function)
+			auto& work = mBlockCirclesWorkers[i].second;
+			work.movingPositions = movingPositions;
+			work.numMovingCircles = (NUM_CIRCLES / 2) / (mNumWorkers + 1); // Add one because this main thread will also do some work
+			work.stillPositions = &mStillPositions[0];
+			work.numStillCircles = NUM_CIRCLES / 2;
+			work.startIndex = ((NUM_CIRCLES / 2) / (mNumWorkers + 1)) * i;
+			// Flag the work as not yet complete
+			auto& workerThread = mBlockCirclesWorkers[i].first;
+			{
+				// Guard every access to shared variable "work.complete" with a mutex (see BlockSpritesThread comments)
+				std::unique_lock<std::mutex> l(workerThread.lock);
+				work.complete = false;
+			}
+
+			// Notify the worker thread via a condition variable - this will wake the worker thread up
+			workerThread.workReady.notify_one();
+
+			// Move to next section of work
+			movingPositions += work.numMovingCircles;
+		}
+
+		// This main thread will also do one section of the work
+		uint32_t numRemainingParticles = (NUM_CIRCLES / 2) - static_cast<uint32_t>(movingPositions - &mMovingPositions[0]);
+		BlockCircles(movingPositions, numRemainingParticles, &mStillPositions[0], NUM_CIRCLES / 2, ((NUM_CIRCLES / 2) / (mNumWorkers + 1)) * mNumWorkers);
+
+		// Wait for all the workers to finish
+		for (uint32_t i = 0; i < mNumWorkers; ++i)
+		{
+			auto& workerThread = mBlockCirclesWorkers[i].first;
+			auto& work = mBlockCirclesWorkers[i].second;
+
+			// Wait for a signal via a condition variable indicating that the worker is complete
+			// See comments in BlockSpritesThread regarding the mutex and the wait method
+			std::unique_lock<std::mutex> l(workerThread.lock);
+			workerThread.workReady.wait(l, [&]() { return work.complete; });
+		}
+
+		// Continues here when *all* workers are complete
+
+		//***************************************************
+	}
+	else
+	{
+		BlockCircles(&mMovingPositions[0], NUM_CIRCLES / 2, &mStillPositions[0], NUM_CIRCLES / 2, 0);
+	}
+}
 
 Circles::~Circles()
 {
@@ -130,10 +190,25 @@ void Circles::InitCircles()
 		bool posChecked = false;
 		bool isSame = false;
 
-		// Set random value for position
-		xrand = posDistr(gen);
-		yrand = posDistr(gen);
-		position = Float3{ xrand,yrand,0 };
+		position = Float3{ 0,0,0 };
+
+		while (!posChecked)
+		{
+			// Generate a random position
+			float xrand = posDistr(gen);
+			float yrand = posDistr(gen);
+			position = Float3{ xrand, yrand, 0 };
+
+			// Check if the position has already been used
+			auto it = std::find_if(usedPositions.begin(), usedPositions.end(),
+				[position](const Float3& p) { return p.x == position.x && p.y == position.y; });
+			if (it == usedPositions.end())
+			{
+				// Position is unique, so use it
+				usedPositions.push_back(position);
+				posChecked = true;
+			}
+		}
 
 		mMovingPositions[i] = position;
 
@@ -164,11 +239,29 @@ void Circles::InitCircles()
 		bool posChecked = false;
 		bool isSame = false;
 		
-		// Set random value for position
-		xrand = posDistr(gen);
-		yrand = posDistr(gen);
-		position = Float3{ xrand,yrand,0 };
-		posChecked = true;
+		position = Float3{ 0,0,0 };
+		posChecked = false;
+
+		position = Float3{ 0,0,0 };
+
+		while (!posChecked)
+		{
+			// Generate a random position
+			float xrand = posDistr(gen);
+			float yrand = posDistr(gen);
+			position = Float3{ xrand, yrand, 0 };
+
+			// Check if the position has already been used
+			auto it = std::find_if(usedPositions.begin(), usedPositions.end(),
+				[position](const Float3& p) { return p.x == position.x && p.y == position.y; });
+			if (it == usedPositions.end())
+			{
+				// Position is unique, so use it
+				usedPositions.push_back(position);
+				posChecked = true;
+			}
+		}
+
 
 		mStillPositions[i] = position;
 
@@ -248,6 +341,7 @@ void Circles::BlockCircles(Float3* movingPositions, uint32_t numMovingCircles, F
 
 			// v - 2 * (v . n) * n
 			Reflect(mVelocities[movingIndex].x, mVelocities[movingIndex].y, nx, ny);
+
 		}
 
 

@@ -13,9 +13,11 @@ struct Light
 	float SpotPower; // spot light only
 };
 
-static const float gParallaxDepth = 0.04f;
+static const float gParallaxDepth = 0.03f;
 static const float PI = 3.1415f;
 static const float GAMMA = 2.2f;
+
+TextureCube IBLCubeMap : register(t0,space1);
 
 cbuffer cbPerObjectConstants : register(b0)
 {
@@ -36,7 +38,7 @@ cbuffer cbPerPassConstants : register(b1)
 	float FarZ;
 	float TotalTime;
 	float DeltaTime;
-	float padding2;
+	float TexDebugIndex;
 	float padding3;
 	float4 AmbientLight;
 	Light Lights[MaxLights];
@@ -52,15 +54,11 @@ cbuffer cbMaterial : register(b2)
 	float4x4 MatTransform;
 };
 
+SamplerState Sampler : register(s4);
 
-float4 CalculateLighting(float3 albedo, float roughness, float metalness, float ao, float3 n, float3 v, bool direction = true, float3 posW = { 0, 0, 0 })
-{
-	// Diffuse colour from material/mesh
-	float4 baseDiffuse = DiffuseAlbedo;
-
-	// Sum lighting from each light
-	float3 colour = albedo * AmbientLight.xyz * ao;
-	
+float4 CalculateLighting(float3 albedo, float roughness, float metalness, float ao, float3 n, float3 v, 
+						float3 emissive = {0,0,0}, bool direction = true, float3 posW = { 0, 0, 0 })
+{	
 	float3 lightVector = 0;
 	float3 l = 0;
 	float3 lc = 0;
@@ -86,6 +84,7 @@ float4 CalculateLighting(float3 albedo, float roughness, float metalness, float 
 	}
 
 	float3 h = normalize(l + v); // Halfway normal is halfway between camera and light normals	
+	
 	// Various dot products used throughout
 	float nDotL = max(dot(n, l), 0.001f);
 	float nDotH = max(dot(n, h), 0.001f);
@@ -100,12 +99,25 @@ float4 CalculateLighting(float3 albedo, float roughness, float metalness, float 
 	// Select specular color based on metalness
 	float3 specularColour = lerp(0.04f, albedo, metalness);
 	
+	float3 reflectionVector = reflect(-v, n);
+	
+	float3 IBLDiffuse = IBLCubeMap.SampleLevel(Sampler, n, 9.0f).rgb;
+
+	float specularMipLevel = 8 * log2(roughness + 1);
+	
+	float3 IBLSpecular = IBLCubeMap.SampleLevel(Sampler, reflectionVector, specularMipLevel);
+	
+	float nDotv = max(dot(n, v), 0.001f);
+	float3 IBLFresnel = specularColour + (1 - specularColour) * pow(max(1.0f - nDotv, 0.0f), 5.0f);
+	
+	float3 colour = ao * (albedo * IBLDiffuse + (1 - roughness) * IBLFresnel * IBLSpecular);
+	
 	// Microfacet specular - fresnel term
-    float3 F = specularColour + (1 - specularColour) * pow(abs(max(1.0f - vDotH, 0.0f)), 5.0f);
+	float3 F = specularColour + (1 - specularColour) * pow(max(1.0f - vDotH, 0.0f), 5.0f);
 
 	// Microfacet specular - normal distribution term
-	float alpha = max(roughness * roughness, 2.0e-3f);
-	float alpha2 = alpha * alpha;
+	float alpha1 = max(roughness * roughness, 2.0e-3f);
+	float alpha2 = alpha1 * alpha1;
 	float nDotH2 = nDotH * nDotH;
 	float dn = nDotH2 * (alpha2 - 1) + 1;
 	float D = alpha2 / (PI * dn * dn);
@@ -118,12 +130,13 @@ float4 CalculateLighting(float3 albedo, float roughness, float metalness, float 
 	float G = gV * gL;
 
 	// Full brdf, diffuse + specular
-	float3 brdf = baseDiffuse.rgb * lambert + F * G * D / (4 * nDotL * nDotV);
+	float3 brdf = albedo.rgb * lambert + F * G * D / (4 * nDotL * nDotV);
 
 	// Accumulate punctual light equation for this light
 	colour += PI * nDotL * lc * li * brdf;
+	colour += emissive;
 	
 	colour = pow(colour, 1 / GAMMA);
 	
-	return float4(colour, baseDiffuse.a);
+	return float4(colour, 1.0f);
 }

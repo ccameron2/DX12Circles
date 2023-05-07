@@ -61,14 +61,14 @@ void Camera::MouseMoved(SDL_Event& event, Window* window)
 			mRadius += dx - dy;
 
 			// Restrict the radius.
-			mRadius = std::clamp(mRadius, 0.1f, 10000.0f);
+			mRadius = std::clamp(mRadius, 0.1f, 8000.0f);
 		}
 	}
 	mLastMousePos.x = mouseX;
 	mLastMousePos.y = mouseY;
 }
 
-void Camera::Update(float frameTime, bool orbit, bool invertMouse)
+void Camera::Update(float frameTime, bool orbit, bool invertMouse, float speedMultiplier)
 {
 	mInvertMouse = invertMouse;
 	mOrbit = orbit;
@@ -96,9 +96,9 @@ void Camera::Update(float frameTime, bool orbit, bool invertMouse)
 		XMVECTOR rightVector = XMVector3Cross(forwardVector, XMVectorSet(0.0f, 1.0f, 0.0f, 0.0f));
 		XMVECTOR upVector = XMVector3Cross(rightVector, forwardVector);
 		XMVECTOR positionVector = XMLoadFloat3(&mPos);
-		positionVector += mMoveLeftRight * frameTime * mMovementSpeed * rightVector;
-		positionVector += mMoveBackForward * frameTime * mMovementSpeed * forwardVector;
-		positionVector += mMoveUpDown * frameTime * mMovementSpeed *upVector;
+		positionVector += mMoveLeftRight * frameTime * mMovementSpeed * speedMultiplier * rightVector;
+		positionVector += mMoveBackForward * frameTime * mMovementSpeed * speedMultiplier * forwardVector;
+		positionVector += mMoveUpDown * frameTime * mMovementSpeed * speedMultiplier * upVector;
 		XMStoreFloat3(&mPos, positionVector);
 
 		mMoveLeftRight = 0;
@@ -160,4 +160,5 @@ void Camera::UpdateSpeed(float speed)
 	{
 		mMovementSpeed += speed;
 	}
+
 }

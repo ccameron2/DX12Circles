@@ -1,5 +1,18 @@
 #include "Mesh.h"
 
+Mesh::Mesh()
+{
+}
+
+Mesh::~Mesh()
+{
+	if(mMaterial) delete mMaterial;
+	for (auto& tex : mTextures)
+	{
+		if(tex->Resource) delete tex;
+	}
+}
+
 D3D12_VERTEX_BUFFER_VIEW Mesh::GetVertexBufferView()
 {
 	D3D12_VERTEX_BUFFER_VIEW vbv;
@@ -33,10 +46,12 @@ void Mesh::CalculateDynamicBufferData()
 	mVertexByteStride = sizeof(Vertex);
 	mVertexBufferByteSize = vbByteSize;
 	mIndexBufferByteSize = ibByteSize;
+
 }
 
 void Mesh::Draw(ID3D12GraphicsCommandList* commandList)
 {
+	// Set vertex and index buffers, and draw
 	commandList->IASetVertexBuffers(0, 1, &GetVertexBufferView());
 	commandList->IASetIndexBuffer(&GetIndexBufferView());
 	commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
@@ -50,12 +65,14 @@ void Mesh::CalculateBufferData(ID3D12Device* d3DDevice, ID3D12GraphicsCommandLis
 	const UINT vBSize = (UINT)mVertices.size() * sizeof(Vertex);
 	const UINT iBSize = (UINT)mIndices.size() * sizeof(std::uint32_t);
 
+	// Create CPU buffers
 	D3DCreateBlob(vBSize, &mCPUVertexBuffer);
 	CopyMemory(mCPUVertexBuffer->GetBufferPointer(), mVertices.data(), vBSize);
 
 	D3DCreateBlob(iBSize, &mCPUIndexBuffer);
 	CopyMemory(mCPUIndexBuffer->GetBufferPointer(), mIndices.data(), iBSize);
 
+	// Create GPU buffers
 	mGPUVertexBuffer = CreateDefaultBuffer(mVertices.data(), vBSize, mVertexBufferUploader, d3DDevice, commandList);
 
 	mGPUIndexBuffer = CreateDefaultBuffer(mIndices.data(), iBSize, mIndexBufferUploader, d3DDevice, commandList);

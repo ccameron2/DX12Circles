@@ -48,6 +48,14 @@ private:
 			result.z = this->z - input.z;
 			return result;
 		}
+		Float3 operator-= (Float3 input)
+		{
+			Float3 result;
+			result.x = this->x -= input.x;
+			result.y = this->y -= input.y;
+			result.z = this->z -= input.z;
+			return result;
+		}
 		Float3 operator- (float input)
 		{
 			Float3 result;
