@@ -39,42 +39,7 @@ void GUI::Update(int numModels)
 	//static bool showDemoWindow = false;
 	//ImGui::ShowDemoWindow(&showDemoWindow);
 
-	ImGui::Begin("Planet");
-
-	ImGui::Text("Geometry");
-
-	if (ImGui::InputInt("Seed", &mSeed, 1, 10))
-	{
-		mPlanetUpdated = true;
-	}
-
-	if (ImGui::Checkbox("CLOD", &mCLOD))
-	{
-		mPlanetUpdated = true;
-
-	}
-
-	if (mCLOD) mMaxLOD = 6;
-	else mMaxLOD = 4;
-
-	if (mLOD > mMaxLOD) mLOD = mMaxLOD;
-
-	if (ImGui::SliderInt("LOD", &mLOD, 0, mMaxLOD))
-	{
-		mPlanetUpdated = true;
-	};
-
-	ImGui::Text("Noise");
-
-	if (ImGui::SliderFloat("Noise Freq", &mFrequency, 0.0f, 1.0f, "%.1f"))
-	{
-		mPlanetUpdated = true;
-	};
-
-	if (ImGui::SliderInt("Octaves", &mOctaves, 0, 20))
-	{
-		mPlanetUpdated = true;
-	};
+	ImGui::Begin("Circles");
 
 	ImGui::Text("World Matrix");
 

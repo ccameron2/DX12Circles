@@ -326,7 +326,7 @@ void App::Update(float frameTime)
 	if (mWindow->mUp)	mCamera->MoveUp();
 	if (mWindow->mDown)	mCamera->MoveDown();
 
-	mCircles->UpdateCircles(frameTime);
+	mCircles->UpdateCircles(/*frameTime*/);
 
 	for (int i = 0; i < NUM_CIRCLES / 2; i++)
 	{
