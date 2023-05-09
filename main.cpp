@@ -1,6 +1,9 @@
 #include "App.h"
 #include <memory>
-//using namespace DirectX;
+
+#pragma warning(disable : 4996)
+
+const bool VISUAL = true;
 
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE prevInstance, PSTR cmdLine, int showCmd)
 {
@@ -10,7 +13,31 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE prevInstance, PSTR cmdLine, in
     #endif
 
     // Create the app
-    auto app = std::make_unique<App>();
+    if (VISUAL)
+    {
+        float arr[5]{float(0.0f),float(1.0f) ,float(2.0f) ,float(3.0f), float(4.0f) };
+        float* ptr = &arr[0];
+        ptr++;
+    
+        auto app = std::make_unique<App>();
+    }
+    else
+    {
+        // Spawn a console
+        AllocConsole();
+        freopen("CONIN$", "r", stdin);
+        freopen("CONOUT$", "w", stdout);
+        freopen("CONOUT$", "w", stderr);
+
+        auto circles = new Circles();
+        circles->InitCircles();
+        while (true)
+        {
+            circles->UpdateCircles();
+            circles->OutputFrame();
+        }
+        circles->ClearMemory();
+    }
 
     return 0;
 }

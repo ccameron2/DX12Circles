@@ -4,9 +4,11 @@
 #include <thread>
 #include <condition_variable>
 
-const int NUM_CIRCLES = 20000;
+const uint32_t NUM_CIRCLES = 1000000;
 const int MAX_POS = 5000;
 const int MIN_POS = -5000;
+const bool OUTPUT_COLLISIONS = false;
+const bool THREADED = true;
 
 class Circles
 {
@@ -87,8 +89,10 @@ private:
 	struct Circle
 	{
 		int mIndex;
-		int mRadius;
-		int mHealth;
+		Float3 mPosition;
+		Float3 mVelocity;
+		//int mRadius;
+		//int mHealth;
 	};
 
 	//---------------------------------------------------------------------------------------------------------------------
@@ -109,11 +113,12 @@ private:
 	struct BlockCirclesWork
 	{
 		bool complete = true;
-		Float3* movingPositions; // The work is described simply as the parameters to the BlockSprites function
+		Circle* movingCircles; // The work is described simply as the parameters to the BlockSprites function
 		uint32_t numMovingCircles;
-		Float3* stillPositions;
+		Circle* stillCircles;
 		uint32_t numStillCircles;
 		uint32_t startIndex;
+		std::vector<Collision> collisions;
 	};
 
 	// A pool of worker threads, each with its associated work
@@ -121,23 +126,21 @@ private:
 	static const uint32_t MAX_WORKERS = 31;
 	std::pair<WorkerThread, BlockCirclesWork> mBlockCirclesWorkers[MAX_WORKERS];
 	uint32_t mNumWorkers;  // Actual number of worker threads being used in array above
-	bool mThreaded = true;
 public:
 	~Circles();
 	void InitCircles();
 	void UpdateCircles(float frameTime = 1);
 	void OutputFrame();
 	void ClearMemory();
-	void BlockCircles(Float3* movingPositions, uint32_t numMovingCircles, Float3* stillPositions, uint32_t numStillCircles, uint32_t index);
-	void BlockCirclesThread(uint32_t thread);
-	Float3 mMovingPositions[NUM_CIRCLES / 2];
-	Float3 mStillPositions[NUM_CIRCLES / 2];
-	Float3 mVelocities[NUM_CIRCLES / 2];
-	int mHealths[NUM_CIRCLES];
+	void BlockCircles(Circle* movingCircles, uint32_t numMovingCircles, const Circle* stillCircles, uint32_t numStillCircles,
+							uint32_t index, std::vector<Collision>& collisions);
 
-	Circle* mMovingCircles[NUM_CIRCLES / 2];
-	Circle* mStillCircles[NUM_CIRCLES / 2];
+	void BlockCirclesThread(uint32_t thread);
+
 	std::vector<Collision> mCollisions;
+
+	Circle* mMovingCircles;
+	Circle* mStillCircles;
 
 	Timer* mTimer;
 };

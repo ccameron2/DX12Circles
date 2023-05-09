@@ -121,7 +121,7 @@ void App::LoadModels()
 	{
 		//Model* ballModel = new Model("Models/sphere.x", mGraphics->mD3DDevice.Get(), mGraphics->mCommandList.Get());
 		Model* ballModel = new Model("", mGraphics->mCommandList.Get(), mMasterBall->mMeshes[0]);
-		ballModel->SetPosition(XMFLOAT3{ mCircles->mMovingPositions[i].x,mCircles->mMovingPositions[i].y,mCircles->mMovingPositions[i].z });
+		ballModel->SetPosition(XMFLOAT3{ mCircles->mMovingCircles[i].mPosition.x,mCircles->mMovingCircles[i].mPosition.y,mCircles->mMovingCircles[i].mPosition.z});
 		ballModel->SetScale(XMFLOAT3{ 1.0f, 1.0f, 1.0f });
 		//ballModel->mMeshes[0]->mMaterial = new Material();
 		//ballModel->mMeshes[0]->mMaterial->DiffuseAlbedo = XMFLOAT4{ 1,0,1,0 };
@@ -133,7 +133,7 @@ void App::LoadModels()
 	{
 		//Model* ballModel = new Model("Models/sphere.x", mGraphics->mD3DDevice.Get(), mGraphics->mCommandList.Get());
 		Model* ballModel = new Model("", mGraphics->mCommandList.Get(), mMasterBall2->mMeshes[0]);
-		ballModel->SetPosition(XMFLOAT3{ mCircles->mStillPositions[i].x,mCircles->mStillPositions[i].y,mCircles->mStillPositions[i].z });
+		ballModel->SetPosition(XMFLOAT3{ mCircles->mStillCircles[i].mPosition.x,mCircles->mStillCircles[i].mPosition.y,mCircles->mStillCircles[i].mPosition.z });
 		ballModel->SetScale(XMFLOAT3{ 1.0f, 1.0f, 1.0f });
 		//ballModel->mMeshes[0]->mMaterial = new Material();
 		//ballModel->mMeshes[0]->mMaterial->DiffuseAlbedo = XMFLOAT4{ 1,0.8,0,0 };
@@ -332,7 +332,7 @@ void App::Update(float frameTime)
 	{
 		mMovingModels[i]->SetPosition
 		(
-			XMFLOAT3{ mCircles->mMovingPositions[i].x, mCircles->mMovingPositions[i].y, mCircles->mMovingPositions[i].z }
+			XMFLOAT3{ mCircles->mMovingCircles[i].mPosition.x,mCircles->mMovingCircles[i].mPosition.y,mCircles->mMovingCircles[i].mPosition.z }
 		);
 		mMovingModels[i]->mNumDirtyFrames += FrameResources.size();
 	}
@@ -340,7 +340,7 @@ void App::Update(float frameTime)
 	{
 		mStillModels[i]->SetPosition
 		(
-			XMFLOAT3{ mCircles->mStillPositions[i].x, mCircles->mStillPositions[i].y, mCircles->mStillPositions[i].z }
+			XMFLOAT3{ mCircles->mStillCircles[i].mPosition.x,mCircles->mStillCircles[i].mPosition.y,mCircles->mStillCircles[i].mPosition.z }
 		);
 		mMovingModels[i]->mNumDirtyFrames += FrameResources.size();
 	}

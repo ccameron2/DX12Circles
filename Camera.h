@@ -43,7 +43,7 @@ public:
 	void UpdateSpeed(float speed);
 
 	// Camera controls
-	float mMovementSpeed = 1.0f;
+	float mMovementSpeed = 10000.0f;
 	bool mInvertMouse = true;
 	bool mOrbit = true;
 
