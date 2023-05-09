@@ -63,7 +63,7 @@ void Circles::UpdateCircles(float frameTime)
 
 		// This main thread will also do one section of the work
 		uint32_t numRemainingParticles = (NUM_CIRCLES / 2) - static_cast<uint32_t>(movingCircles - &mMovingCircles[0]);
-		BlockCircles(movingCircles, numRemainingParticles, &mStillCircles[0], NUM_CIRCLES / 2, ((NUM_CIRCLES / 2) / (mNumWorkers + 1)) * mNumWorkers, mCollisions);
+		BlockCirclesLS(movingCircles, numRemainingParticles, &mStillCircles[0], NUM_CIRCLES / 2, ((NUM_CIRCLES / 2) / (mNumWorkers + 1)) * mNumWorkers, mCollisions);
 
 		// Wait for all the workers to finish
 		for (uint32_t i = 0; i < mNumWorkers; ++i)
@@ -91,18 +91,13 @@ void Circles::UpdateCircles(float frameTime)
 	}
 	else
 	{
-		BlockCircles(&mMovingCircles[0], NUM_CIRCLES / 2, &mStillCircles[0], NUM_CIRCLES / 2, 0, mCollisions);
+		BlockCirclesLS(&mMovingCircles[0], NUM_CIRCLES / 2, &mStillCircles[0], NUM_CIRCLES / 2, 0, mCollisions);
 	}
 }
 
 
 Circles::~Circles()
 {
-	//*********************************************************
-	// Running threads must be joined to the main thread or detached before their destruction. If not
-	// the entire program immediately terminates (in fact the program is quiting here anyway, but if 
-	// std::terminate is called we probably won't get proper destruction). The worker threads never
-	// naturally exit so we can't use join. So in this case detach them prior to their destruction.
 	for (uint32_t i = 0; i < mNumWorkers; ++i)
 	{
 		mBlockCirclesWorkers[i].first.thread.detach();
@@ -113,14 +108,11 @@ void Circles::InitCircles()
 {
 	if (THREADED)
 	{
-		//*********************************************************
-		// Start worker threads
-		mNumWorkers = std::thread::hardware_concurrency(); // Gives a hint about level of thread concurrency supported by system (0 means no hint given)
+		mNumWorkers = std::thread::hardware_concurrency();
 		if (mNumWorkers == 0)  mNumWorkers = 8;
-		--mNumWorkers; // Decrease by one because this main thread is already running
+		--mNumWorkers;
 		for (uint32_t i = 0; i < mNumWorkers; ++i)
 		{
-			// Start each worker thread running the BlockSpritesThread method. Note the way to construct std::thread to run a member function
 			mBlockCirclesWorkers[i].first.thread = std::thread(&Circles::BlockCirclesThread, this, i);
 		}
 	}
@@ -229,6 +221,9 @@ void Circles::InitCircles()
 
 		usedPositions.push_back(position);
 	}
+
+	SortCirclesByX(mStillCircles, NUM_CIRCLES / 2);
+
 	mTimer = new Timer();
 	mTimer->Start();
 }
@@ -257,7 +252,7 @@ void Circles::ClearMemory()
 	for (int i = 0; i < NUM_CIRCLES / 2; i++) delete[] mStillCircles;
 }
 
-void Circles::BlockCircles(Circle* movingCircles, uint32_t numMovingCircles, const Circle* stillCircles, uint32_t numStillCircles, uint32_t startIndex, std::vector<Collision>& collisions)
+void Circles::BlockCirclesLS(Circle* movingCircles, uint32_t numMovingCircles, Circle* stillCircles, uint32_t numStillCircles, uint32_t startIndex, std::vector<Collision>& collisions)
 {
 	Circle* nextCircle = movingCircles + 1;
 	Circle* movingEnd = movingCircles + numMovingCircles - 1;
@@ -271,65 +266,133 @@ void Circles::BlockCircles(Circle* movingCircles, uint32_t numMovingCircles, con
 
 		auto still = stillCircles;
 		int stillIndex = 0;
-		bool wallCol = false;
+		bool col = false;
 
-		//auto s = still;
-		//auto e = stillEnd;
-		//   Float3* m;
-		//bool found = false;
-		//do
-		//{
-		//	m = s + (e - s) / 2;
-		//	if (movingPositions->x <= m->x)  e = m;
-		//	else if (movingPositions->x >= m->x)  s = m;
-		//	else found = true;
-		//} while (!found && e - s > 1);
-		//// If no overlapping x-range found then no collision
-		//if (found)
-		//{
-		//	// Search from the blocker found in the strip, in a rightwards direction, until outside strip or end of list
-		//	auto blocker = m;
-		//	while (movingPositions->x > blocker->x && blocker != stillEnd)
-		//	{
-		//		float bx = blocker->x;
-		//		float by = blocker->y;
-		//		float overlapRight = movingPositions->x - bx;
-		//		float overlapLeft = bx - movingPositions->x;
-		//		float overlapBottom = movingPositions->y - by;
-		//		float overlapTop = by - movingPositions->y;
-		//		float o1 = overlapLeft * overlapRight;
-		//		float o2 = overlapTop * overlapBottom;
-		//		if (o1 > 0 && o2 > 0)
-		//		{
-		//			auto distance = Distance(x1, y1, bx, by);
-		//			float nx = (bx - x1) / distance;
-		//			float ny = (by - y1) / distance;
-		//			Reflect(mVelocities[movingIndex].x, mVelocities[movingIndex].y, nx, ny);
-		//		}
-		//		++blocker;
-		//	}
-		//	// Search from the blocker found in the strip, in a lefttwards direction, until outside strip or end of list
-		//	blocker = m;
-		//	while (blocker-- != stillPositions && movingPositions->x < blocker->x)  // NOTE: using side effect of --
-		//	{
-		//		float bx = blocker->x;
-		//		float by = blocker->y;
-		//		float overlapRight = movingPositions->x - bx;
-		//		float overlapLeft = bx - movingPositions->x;
-		//		float overlapBottom = movingPositions->y - by;
-		//		float overlapTop = by - movingPositions->y;
-		//		float o1 = overlapLeft * overlapRight;
-		//		float o2 = overlapTop * overlapBottom;
-		//		if (o1 > 0 && o2 > 0)
-		//		{
-		//			auto distance = Distance(x1, y1, bx, by);
-		//			float nx = (bx - x1) / distance;
-		//			float ny = (by - y1) / distance;
-		//			Reflect(mVelocities[movingIndex].x, mVelocities[movingIndex].y, nx, ny);
-		//		}
-		//	}
-		//}
+		auto start = still;
+		auto end = stillEnd;
+		Circle* mid;
+		bool found = false;
+		do
+		{
+			mid = start + (end - start) / 2;
+			if (movingCircles->mPosition.x + 11 <= mid->mPosition.x)  end = mid;
+			else if (movingCircles->mPosition.x - 11 >= mid->mPosition.x)  start = mid;
+			else found = true;
+		} while (!found && end - start > 1);
 
+		if (found)
+		{
+			// Search from circle found rightwards 
+			auto blocker = mid;
+			while (movingCircles->mPosition.x + 11 > blocker->mPosition.x && blocker != stillEnd)
+			{
+				auto x2 = blocker->mPosition.x;
+				auto y2 = blocker->mPosition.y;
+				auto distanceBetweenCirclesSquared = ((x2 - x1) * (x2 - x1)) + ((y2 - y1) * (y2 - y1));
+				if (distanceBetweenCirclesSquared <= 400)
+				{
+					if (OUTPUT_COLLISIONS) collisions.push_back(Collision{ movingCircles->mIndex, blocker->mIndex });
+
+					auto distance = Distance(x1, y1, x2, y2);
+					float nx = (x2 - x1) / distance;
+					float ny = (y2 - y1) / distance;
+
+					// v - 2 * (v . n) * n
+					Reflect(movingCircles->mVelocity.x, movingCircles->mVelocity.y, nx, ny);
+					col = true;
+					break;
+				}
+				++blocker;
+			}
+
+			if (col)
+			{
+				movingIndex++;
+				++movingCircles;
+				continue;
+			}
+
+			blocker = mid;
+			while (blocker-- != stillCircles && movingCircles->mPosition.x - 11 < blocker->mPosition.x)
+			{
+				auto x2 = blocker->mPosition.x;
+				auto y2 = blocker->mPosition.y;
+				auto distanceBetweenCirclesSquared = ((x2 - x1) * (x2 - x1)) + ((y2 - y1) * (y2 - y1));
+				if (distanceBetweenCirclesSquared <= 400)
+				{
+					if (OUTPUT_COLLISIONS) collisions.push_back(Collision{ movingCircles->mIndex, blocker->mIndex });
+
+					auto distance = Distance(x1, y1, x2, y2);
+					float nx = (x2 - x1) / distance;
+					float ny = (y2 - y1) / distance;
+
+					// v - 2 * (v . n) * n
+					Reflect(movingCircles->mVelocity.x, movingCircles->mVelocity.y, nx, ny);
+					col = true;
+					break;
+				}
+			}
+			if (col)
+			{
+				movingIndex++;
+				++movingCircles;
+				continue;
+			}
+		}
+		int maxPos = MAX_POS + 100;
+		int minPos = MIN_POS - 100;
+
+		bool wallCollision = false;
+		bool wallLeftCollision = false;
+		bool wallRightCollision = false;
+		bool wallUpCollision = false;
+		bool wallDownCollision = false;
+
+		if (x1 >= maxPos) { wallRightCollision = true; wallCollision = true; }
+		else if (y1 >= maxPos) { wallUpCollision = true;	  wallCollision = true; }
+		else if (x1 <= minPos) { wallLeftCollision = true;  wallCollision = true; }
+		else if (y1 <= minPos) { wallDownCollision = true;  wallCollision = true; }
+
+		if (wallCollision)
+		{
+			int x2 = 0;
+			int y2 = 0;
+
+			if (wallLeftCollision) { x2 = minPos;  y2 = y1; }
+			else if (wallRightCollision) { x2 = maxPos; y2 = y1; }
+			else if (wallUpCollision) { x2 = x1; y2 = maxPos; }
+			else if (wallDownCollision) { x2 = x1; y2 = minPos; }
+
+			// Calculate the normal vector pointing from c1 to c2
+			auto distance = Distance(x1, y1, x2, y2);
+			float nx = (x2 - x1) / distance;
+			float ny = (y2 - y1) / distance;
+
+			// v - 2 * (v . n) * n
+			Reflect(movingCircles->mVelocity.x, movingCircles->mVelocity.y, nx, ny);
+			movingIndex++;
+			++movingCircles;
+			continue;
+		}
+		movingIndex++;
+		++movingCircles;
+	}
+}
+void Circles::BlockCircles(Circle* movingCircles, uint32_t numMovingCircles, Circle* stillCircles, uint32_t numStillCircles, uint32_t startIndex, std::vector<Collision>& collisions)
+{
+	Circle* nextCircle = movingCircles + 1;
+	Circle* movingEnd = movingCircles + numMovingCircles - 1;
+
+	const Circle* stillEnd = stillCircles + numStillCircles - 1;
+	int movingIndex = startIndex;
+	while (movingCircles != movingEnd)
+	{
+		auto x1 = movingCircles->mPosition.x;
+		auto y1 = movingCircles->mPosition.y;
+
+		auto still = stillCircles;
+		int stillIndex = 0;
+		bool col = false;
 		while (still != stillEnd)
 		{
 			auto x2 = still->mPosition.x;
@@ -354,13 +417,13 @@ void Circles::BlockCircles(Circle* movingCircles, uint32_t numMovingCircles, con
 
 				// v - 2 * (v . n) * n
 				Reflect(movingCircles->mVelocity.x, movingCircles->mVelocity.y, nx, ny);
-				wallCol = true;
+				col = true;
 				break;
 			}
 			stillIndex++;
 			++still;
 		}		
-		if (wallCol)
+		if (col)
 		{
 			movingIndex++;
 			++movingCircles;
@@ -412,33 +475,51 @@ void Circles::BlockCirclesThread(uint32_t thread)
 	auto& work = mBlockCirclesWorkers[thread].second;
 	while (true)
 	{
-		// In this system we need to communicate between the main thread and these worker threads.
-		// We need to indicate when work is ready, then reply when it is complete. We use "condition
-		// variables" for this. They are a method of receiving notifications between threads.
-		// Condition variables reqiuire a mutex to be held when using them. It protects the shared
-		// data that is used in the predicate ("work.complete" here). We don't want the other thread
-		// changing work.complete while we are reading it. 
-		// In practice, when we call "wait" the mutex is immediately released while waiting for the
-		// signal (workReady), it is aquired again when a signal arrives and the predicate is checked
-		// (work.complete). After wait finishes the mutex is still held. That is why there are curly
-		// brackets here to release the mutex (unique_lock works like unique_ptr, it releases the
-		// mutex when it goes out of scope). This system is tricky to fully appreciate at first.
 		{
 			std::unique_lock<std::mutex> l(worker.lock);
-			worker.workReady.wait(l, [&]() { return !work.complete; }); // Wait until a workReady signal arrives, then verify it by testing      
-			// that work.complete is false. The test is required because there is
-			// the possibility of "spurious wakeups": a false signal. Also in 
-			// some situations other threads may have eaten the work already.
+			worker.workReady.wait(l, [&]() { return !work.complete; });
 		}
-		// We have some work so do it...
-		BlockCircles(work.movingCircles, work.numMovingCircles, work.stillCircles, work.numStillCircles,work.startIndex, work.collisions);
+		//BlockCircles(work.movingCircles, work.numMovingCircles, work.stillCircles, work.numStillCircles, work.startIndex, work.collisions);
+		BlockCirclesLS(work.movingCircles, work.numMovingCircles, work.stillCircles, work.numStillCircles,work.startIndex, work.collisions);
 		{
-			// Flag the work is complete
-			// We also guard every normal access to shared variable "work.complete" with the same mutex
 			std::unique_lock<std::mutex> l(worker.lock);
 			work.complete = true;
 		}
-		// Send a signal back to the main thread to say the work is complete, loop back and wait for more work
 		worker.workReady.notify_one();
 	}
+}
+
+void Circles::SortCirclesByX(Circle* circles, int numCircles)
+{
+	if (numCircles <= 1)
+		return;
+
+	int pivotIndex = numCircles / 2;
+	float pivotX = circles[pivotIndex].mPosition.x;
+
+	Circle* left = circles;
+	Circle* right = circles + numCircles - 1;
+
+	while (left <= right)
+	{
+		if (left->mPosition.x < pivotX)
+		{
+			left++;
+			continue;
+		}
+		if (right->mPosition.x > pivotX)
+		{
+			right--;
+			continue;
+		}
+
+		Circle temp = *left;
+		*left = *right;
+		*right = temp;
+		left++;
+		right--;
+	}
+
+	SortCirclesByX(circles, right - circles + 1);
+	SortCirclesByX(left, circles + numCircles - left);
 }

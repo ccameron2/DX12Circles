@@ -4,9 +4,9 @@
 #include <thread>
 #include <condition_variable>
 
-const uint32_t NUM_CIRCLES = 1000000;
-const int MAX_POS = 5000;
-const int MIN_POS = -5000;
+const uint32_t NUM_CIRCLES = 100000;
+const int MAX_POS = 10000;
+const int MIN_POS = -10000;
 const bool OUTPUT_COLLISIONS = false;
 const bool THREADED = true;
 
@@ -95,13 +95,6 @@ private:
 		//int mHealth;
 	};
 
-	//---------------------------------------------------------------------------------------------------------------------
-	// Thread Pools
-	//---------------------------------------------------------------------------------------------------------------------
-
-	// A worker thread wakes up when work is signalled to be ready, and signals back when the work is complete.
-	// Same condition variable is used for signalling in both directions.
-	// A mutex is used to guard data shared between threads
 	struct WorkerThread
 	{
 		std::thread             thread;
@@ -109,11 +102,10 @@ private:
 		std::mutex              lock;
 	};
 
-	// Data describing work to do by a worker thread - this task is collision detection between some sprites against some blockers
 	struct BlockCirclesWork
 	{
 		bool complete = true;
-		Circle* movingCircles; // The work is described simply as the parameters to the BlockSprites function
+		Circle* movingCircles;
 		uint32_t numMovingCircles;
 		Circle* stillCircles;
 		uint32_t numStillCircles;
@@ -121,22 +113,23 @@ private:
 		std::vector<Collision> collisions;
 	};
 
-	// A pool of worker threads, each with its associated work
-	// A more flexible system could generalise the type of work that worker threads can do
 	static const uint32_t MAX_WORKERS = 31;
 	std::pair<WorkerThread, BlockCirclesWork> mBlockCirclesWorkers[MAX_WORKERS];
-	uint32_t mNumWorkers;  // Actual number of worker threads being used in array above
+	uint32_t mNumWorkers;
 public:
 	~Circles();
 	void InitCircles();
 	void UpdateCircles(float frameTime = 1);
 	void OutputFrame();
 	void ClearMemory();
-	void BlockCircles(Circle* movingCircles, uint32_t numMovingCircles, const Circle* stillCircles, uint32_t numStillCircles,
+	void BlockCircles(Circle* movingCircles, uint32_t numMovingCircles, Circle* stillCircles, uint32_t numStillCircles,
 							uint32_t index, std::vector<Collision>& collisions);
+	void BlockCirclesLS(Circle* movingCircles, uint32_t numMovingCircles, Circle* stillCircles, uint32_t numStillCircles,
+		uint32_t startIndex, std::vector<Collision>& collisions);
 
 	void BlockCirclesThread(uint32_t thread);
-
+	void SortCirclesByX(Circle* circles, int numCircles);
+	bool CheckWalls(Circle* circle);
 	std::vector<Collision> mCollisions;
 
 	Circle* mMovingCircles;

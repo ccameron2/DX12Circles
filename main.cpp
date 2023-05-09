@@ -15,10 +15,6 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE prevInstance, PSTR cmdLine, in
     // Create the app
     if (VISUAL)
     {
-        float arr[5]{float(0.0f),float(1.0f) ,float(2.0f) ,float(3.0f), float(4.0f) };
-        float* ptr = &arr[0];
-        ptr++;
-    
         auto app = std::make_unique<App>();
     }
     else

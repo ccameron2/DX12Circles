@@ -64,7 +64,7 @@ public:
 	float mPitch = 0.0f;
 
 	float NearZ = 0.01f;
-	float FarZ = 20000.0f;
+	float FarZ = 40000.0f;
 
 	// Resolution
 	float mWindowWidth = 0;
@@ -73,6 +73,6 @@ public:
 	// Orbit rotation values
 	float mTheta = 1.5f * XM_PI;
 	float mPhi = XM_PIDIV4;
-	float mRadius = 2000.0f;
+	float mRadius = 2500.0f;
 };
 
