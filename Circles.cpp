@@ -6,7 +6,6 @@
 // Calculate the distance between two points
 float Distance(float x1, float y1, float x2, float y2)
 {
-	// THIS IS AN ISSUE AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
 	return std::sqrt((x2 - x1) * (x2 - x1) + (y2 - y1) * (y2 - y1));
 }
 
@@ -28,55 +27,45 @@ void Circles::UpdateCircles(float frameTime)
 {
 	for (int i = 0; i < NUM_CIRCLES / 2; i++)
 	{
+		if (frameTime != 1) frameTime *= 10;
 		mMovingCircles[i].mPosition += mMovingCircles[i].mVelocity * frameTime;
 	}
 
 	if (THREADED)
 	{
 		auto movingCircles = &mMovingCircles[0];
-		// Distribute the work to the worker threads
+
 		for (uint32_t i = 0; i < mNumWorkers; ++i)
 		{
-			// Prepare a section of work (basically the parameters to the collision detection function)
 			auto& work = mBlockCirclesWorkers[i].second;
 			work.movingCircles = movingCircles;
-			work.numMovingCircles = (NUM_CIRCLES / 2) / (mNumWorkers + 1); // Add one because this main thread will also do some work
+			work.numMovingCircles = (NUM_CIRCLES / 2) / (mNumWorkers + 1);
 			work.stillCircles = &mStillCircles[0];
 			work.numStillCircles = NUM_CIRCLES / 2;
-			work.startIndex = ((NUM_CIRCLES / 2) / (mNumWorkers + 1)) * i;
 			work.collisions.clear();
 
-			// Flag the work as not yet complete
 			auto& workerThread = mBlockCirclesWorkers[i].first;
 			{
-				// Guard every access to shared variable "work.complete" with a mutex (see BlockSpritesThread comments)
 				std::unique_lock<std::mutex> l(workerThread.lock);
 				work.complete = false;
 			}
 
-			// Notify the worker thread via a condition variable - this will wake the worker thread up
 			workerThread.workReady.notify_one();
 
-			// Move to next section of work
 			movingCircles += work.numMovingCircles;
 		}
 
-		// This main thread will also do one section of the work
 		uint32_t numRemainingParticles = (NUM_CIRCLES / 2) - static_cast<uint32_t>(movingCircles - &mMovingCircles[0]);
-		BlockCirclesLS(movingCircles, numRemainingParticles, &mStillCircles[0], NUM_CIRCLES / 2, ((NUM_CIRCLES / 2) / (mNumWorkers + 1)) * mNumWorkers, mCollisions);
+		BlockCirclesLS(movingCircles, numRemainingParticles, &mStillCircles[0], NUM_CIRCLES / 2, mCollisions);
 
-		// Wait for all the workers to finish
 		for (uint32_t i = 0; i < mNumWorkers; ++i)
 		{
 			auto& workerThread = mBlockCirclesWorkers[i].first;
 			auto& work = mBlockCirclesWorkers[i].second;
 
-			// Wait for a signal via a condition variable indicating that the worker is complete
-			// See comments in BlockSpritesThread regarding the mutex and the wait method
 			std::unique_lock<std::mutex> l(workerThread.lock);
 			workerThread.workReady.wait(l, [&]() { return work.complete; });
 
-			
 			{
 				for (auto& collision : work.collisions)
 				{
@@ -85,13 +74,10 @@ void Circles::UpdateCircles(float frameTime)
 			}					
 		}	
 
-		// Continues here when *all* workers are complete
-
-		//***************************************************
 	}
 	else
 	{
-		BlockCirclesLS(&mMovingCircles[0], NUM_CIRCLES / 2, &mStillCircles[0], NUM_CIRCLES / 2, 0, mCollisions);
+		BlockCirclesLS(&mMovingCircles[0], NUM_CIRCLES / 2, &mStillCircles[0], NUM_CIRCLES / 2,  mCollisions);
 	}
 }
 
@@ -119,12 +105,10 @@ void Circles::InitCircles()
 	
 	std::random_device rd; // obtain a random number from hardware
 	std::mt19937 gen(rd()); // seed the generator
-	std::uniform_int_distribution<> velDistr(-5, 5); // define the range
+	std::uniform_int_distribution<> velDistr(MIN_VEL, MAX_VEL); // define the range
 	std::uniform_int_distribution<> posDistr(MIN_POS, MAX_POS); // define the range
 	std::vector<Float3> usedPositions;
 	
-	auto movingCircles = new Circle[NUM_CIRCLES / 2];
-	auto stillCircles = new Circle[NUM_CIRCLES / 2];
 	mMovingCircles = new Circle[NUM_CIRCLES / 2];
 	mStillCircles = new Circle[NUM_CIRCLES / 2];
 	Float3 position;
@@ -132,7 +116,8 @@ void Circles::InitCircles()
 	float yrand;
 	for (int i = 0; i < NUM_CIRCLES / 2; i++)
 	{
-		mMovingCircles[i].mIndex = i;
+		mMovingCircles[i].mName = "Moving Circle " + std::to_string(i);
+	
 		bool posChecked = false;
 		bool isSame = false;
 
@@ -161,8 +146,8 @@ void Circles::InitCircles()
 
 		mMovingCircles[i].mPosition = position;
 
-		//circle->mRadius = 10;
-
+		mMovingCircles[i].mRadius = 10;
+		mMovingCircles[i].mColour = { 1, 0, 1 };
 		bool velicityZero = true;
 		auto velocity = Float3{ 0,0,0 };
 		while (velicityZero)
@@ -174,14 +159,14 @@ void Circles::InitCircles()
 			if (velocity != Float3{ 0,0,0 }) velicityZero = false;
 		}
 		mMovingCircles[i].mVelocity = velocity;
-		//circle->mHealth = 100;
+		mMovingCircles[i].mHealth = 100;
 
 		usedPositions.push_back(position);
 	}
 
 	for (int i = 0; i < NUM_CIRCLES / 2; i++)
 	{
-		mStillCircles[i]. mIndex = i;
+		mStillCircles[i].mName = "Still Circle " + std::to_string(i);
 
 		bool posChecked = false;
 		bool isSame = false;
@@ -215,9 +200,10 @@ void Circles::InitCircles()
 
 		mStillCircles[i].mPosition = position;
 		mStillCircles[i].mVelocity = { 0,0,0 };
-		//circle->mRadius = 10;
+		mStillCircles[i].mRadius = 10;
+		mStillCircles[i].mColour = { 1, 0.8, 0 };
 
-		//circle->mHealth = 100;
+		mStillCircles[i].mHealth = 100;
 
 		usedPositions.push_back(position);
 	}
@@ -236,12 +222,15 @@ void Circles::OutputFrame()
 
 	for (auto& collision : mCollisions)
 	{
-		int index1 = collision.circle1;
-		int index2 = collision.circle2;
-		auto sIndex1 = std::to_string(index1);
-		auto sIndex2 = std::to_string(index2);
-		std::cout << "Moving Circle " << sIndex1 << " collided with " << "Still Circle " << sIndex2 << std::endl;
+		auto name1 = collision.Circle1Name;
+		auto name2 = collision.Circle2Name;
+		auto health1 = collision.Circle1Health;
+		auto health2 = collision.Circle2Health;
+		auto time = collision.TimeOfCollision;
+
+		std::cout << name1 << " with " << health1 << " health remaining, collided with " << name2 << " with " << health2 << " health remaining, at " << time << "." << std::endl;
 	}
+
 	mCollisions.clear();
 }
 
@@ -252,13 +241,12 @@ void Circles::ClearMemory()
 	for (int i = 0; i < NUM_CIRCLES / 2; i++) delete[] mStillCircles;
 }
 
-void Circles::BlockCirclesLS(Circle* movingCircles, uint32_t numMovingCircles, Circle* stillCircles, uint32_t numStillCircles, uint32_t startIndex, std::vector<Collision>& collisions)
+void Circles::BlockCirclesLS(Circle* movingCircles, uint32_t numMovingCircles, Circle* stillCircles, uint32_t numStillCircles, std::vector<Collision>& collisions)
 {
 	Circle* nextCircle = movingCircles + 1;
 	Circle* movingEnd = movingCircles + numMovingCircles - 1;
 
 	const Circle* stillEnd = stillCircles + numStillCircles - 1;
-	int movingIndex = startIndex;
 	while (movingCircles != movingEnd)
 	{
 		auto x1 = movingCircles->mPosition.x;
@@ -268,6 +256,14 @@ void Circles::BlockCirclesLS(Circle* movingCircles, uint32_t numMovingCircles, C
 		int stillIndex = 0;
 		bool col = false;
 
+		int mLSweepSide = 15;
+		int mRSweepSide = 15;
+		if (RANDOM_RADIUS)
+		{
+			mLSweepSide = movingCircles->mRadius - 5;
+			mRSweepSide = movingCircles->mRadius + 5;
+		}
+
 		auto start = still;
 		auto end = stillEnd;
 		Circle* mid;
@@ -275,8 +271,8 @@ void Circles::BlockCirclesLS(Circle* movingCircles, uint32_t numMovingCircles, C
 		do
 		{
 			mid = start + (end - start) / 2;
-			if (movingCircles->mPosition.x + 11 <= mid->mPosition.x)  end = mid;
-			else if (movingCircles->mPosition.x - 11 >= mid->mPosition.x)  start = mid;
+			if (movingCircles->mPosition.x + mRSweepSide <= mid->mPosition.x)  end = mid;
+			else if (movingCircles->mPosition.x - mLSweepSide >= mid->mPosition.x)  start = mid;
 			else found = true;
 		} while (!found && end - start > 1);
 
@@ -284,14 +280,20 @@ void Circles::BlockCirclesLS(Circle* movingCircles, uint32_t numMovingCircles, C
 		{
 			// Search from circle found rightwards 
 			auto blocker = mid;
-			while (movingCircles->mPosition.x + 11 > blocker->mPosition.x && blocker != stillEnd)
+			while (movingCircles->mPosition.x + mRSweepSide > blocker->mPosition.x && blocker != stillEnd)
 			{
+				auto minColDistance = 400;
+				if (RANDOM_RADIUS) minColDistance = (movingCircles->mRadius + blocker->mRadius)* (movingCircles->mRadius + blocker->mRadius);
+
 				auto x2 = blocker->mPosition.x;
 				auto y2 = blocker->mPosition.y;
 				auto distanceBetweenCirclesSquared = ((x2 - x1) * (x2 - x1)) + ((y2 - y1) * (y2 - y1));
-				if (distanceBetweenCirclesSquared <= 400)
+				if (distanceBetweenCirclesSquared <= minColDistance)
 				{
-					if (OUTPUT_COLLISIONS) collisions.push_back(Collision{ movingCircles->mIndex, blocker->mIndex });
+					if(movingCircles->mHealth - 20 >= 0) movingCircles->mHealth -= 20;
+					if(blocker->mHealth - 20 >= 0) blocker->mHealth -= 20;
+
+					if (OUTPUT_COLLISIONS) collisions.push_back(Collision{ movingCircles->mName, blocker->mName, movingCircles->mHealth, blocker->mHealth, mTimer->GetTime()});
 
 					auto distance = Distance(x1, y1, x2, y2);
 					float nx = (x2 - x1) / distance;
@@ -307,20 +309,25 @@ void Circles::BlockCirclesLS(Circle* movingCircles, uint32_t numMovingCircles, C
 
 			if (col)
 			{
-				movingIndex++;
 				++movingCircles;
 				continue;
 			}
 
 			blocker = mid;
-			while (blocker-- != stillCircles && movingCircles->mPosition.x - 11 < blocker->mPosition.x)
+			while (blocker-- != stillCircles && movingCircles->mPosition.x - mLSweepSide < blocker->mPosition.x)
 			{
+				auto minColDistance = 400;
+				if (RANDOM_RADIUS) minColDistance = (movingCircles->mRadius + blocker->mRadius) * (movingCircles->mRadius + blocker->mRadius);
+
 				auto x2 = blocker->mPosition.x;
 				auto y2 = blocker->mPosition.y;
 				auto distanceBetweenCirclesSquared = ((x2 - x1) * (x2 - x1)) + ((y2 - y1) * (y2 - y1));
-				if (distanceBetweenCirclesSquared <= 400)
+				if (distanceBetweenCirclesSquared <= minColDistance)
 				{
-					if (OUTPUT_COLLISIONS) collisions.push_back(Collision{ movingCircles->mIndex, blocker->mIndex });
+					if (movingCircles->mHealth - 20 >= 0) movingCircles->mHealth -= 20;
+					if (blocker->mHealth - 20 >= 0) blocker->mHealth -= 20;
+
+					if (OUTPUT_COLLISIONS) collisions.push_back(Collision{ movingCircles->mName, blocker->mName, movingCircles->mHealth, blocker->mHealth, mTimer->GetTime() });
 
 					auto distance = Distance(x1, y1, x2, y2);
 					float nx = (x2 - x1) / distance;
@@ -334,13 +341,19 @@ void Circles::BlockCirclesLS(Circle* movingCircles, uint32_t numMovingCircles, C
 			}
 			if (col)
 			{
-				movingIndex++;
 				++movingCircles;
 				continue;
 			}
 		}
-		int maxPos = MAX_POS + 100;
-		int minPos = MIN_POS - 100;
+
+		if (!WALLS) 
+		{
+			++movingCircles;
+			continue;
+		} 
+
+		int maxPos = MAX_POS + WALL_DISTANCE_FROM_EDGE;
+		int minPos = MIN_POS - WALL_DISTANCE_FROM_EDGE;
 
 		bool wallCollision = false;
 		bool wallLeftCollision = false;
@@ -370,45 +383,43 @@ void Circles::BlockCirclesLS(Circle* movingCircles, uint32_t numMovingCircles, C
 
 			// v - 2 * (v . n) * n
 			Reflect(movingCircles->mVelocity.x, movingCircles->mVelocity.y, nx, ny);
-			movingIndex++;
 			++movingCircles;
 			continue;
 		}
-		movingIndex++;
 		++movingCircles;
 	}
 }
-void Circles::BlockCircles(Circle* movingCircles, uint32_t numMovingCircles, Circle* stillCircles, uint32_t numStillCircles, uint32_t startIndex, std::vector<Collision>& collisions)
+void Circles::BlockCircles(Circle* movingCircles, uint32_t numMovingCircles, Circle* stillCircles, uint32_t numStillCircles, std::vector<Collision>& collisions)
 {
 	Circle* nextCircle = movingCircles + 1;
 	Circle* movingEnd = movingCircles + numMovingCircles - 1;
 
 	const Circle* stillEnd = stillCircles + numStillCircles - 1;
-	int movingIndex = startIndex;
 	while (movingCircles != movingEnd)
 	{
 		auto x1 = movingCircles->mPosition.x;
 		auto y1 = movingCircles->mPosition.y;
 
 		auto still = stillCircles;
-		int stillIndex = 0;
 		bool col = false;
 		while (still != stillEnd)
 		{
+			auto minColDistance = 400;
+			if (RANDOM_RADIUS) minColDistance = (movingCircles->mRadius + still->mRadius) * (movingCircles->mRadius + still->mRadius);
+
 			auto x2 = still->mPosition.x;
 			auto y2 = still->mPosition.y;
 			auto distanceBetweenCirclesSquared = ((x2 - x1) * (x2 - x1)) + ((y2 - y1) * (y2 - y1));
 
-
 			// Check for collision
-			if (distanceBetweenCirclesSquared <= 400)
+			if (distanceBetweenCirclesSquared <= minColDistance)
 			{
 				// collision detected
 				
-				//mHealths[i] -= 20;
-				//mHealths[j] -= 20;
+				if (movingCircles->mHealth - 20 >= 0) movingCircles->mHealth -= 20;
+				if (still->mHealth - 20 >= 0) still->mHealth -= 20;
 
-				if(OUTPUT_COLLISIONS) collisions.push_back(Collision{ movingIndex, stillIndex });
+				if(OUTPUT_COLLISIONS) collisions.push_back(Collision{ movingCircles->mName, still->mName, movingCircles->mHealth, still->mHealth, mTimer->GetTime() });
 
 				// Calculate the normal vector pointing from c1 to c2
 				auto distance = Distance(x1, y1, x2, y2);
@@ -420,17 +431,22 @@ void Circles::BlockCircles(Circle* movingCircles, uint32_t numMovingCircles, Cir
 				col = true;
 				break;
 			}
-			stillIndex++;
 			++still;
 		}		
 		if (col)
 		{
-			movingIndex++;
 			++movingCircles;
 			continue;
 		}
-		int maxPos = MAX_POS + 100;
-		int minPos = MIN_POS - 100;
+
+		if (!WALLS)
+		{
+			++movingCircles;
+			continue;
+		}
+
+		int maxPos = MAX_POS + WALL_DISTANCE_FROM_EDGE;
+		int minPos = MIN_POS - WALL_DISTANCE_FROM_EDGE;
 
 		bool wallCollision = false;
 		bool wallLeftCollision = false;
@@ -460,11 +476,9 @@ void Circles::BlockCircles(Circle* movingCircles, uint32_t numMovingCircles, Cir
 
 			// v - 2 * (v . n) * n
 			Reflect(movingCircles->mVelocity.x, movingCircles->mVelocity.y, nx, ny);
-			movingIndex++;
 			++movingCircles;
 			continue;
 		}
-		movingIndex++;
 		++movingCircles;
 	}
 }
@@ -479,8 +493,8 @@ void Circles::BlockCirclesThread(uint32_t thread)
 			std::unique_lock<std::mutex> l(worker.lock);
 			worker.workReady.wait(l, [&]() { return !work.complete; });
 		}
-		//BlockCircles(work.movingCircles, work.numMovingCircles, work.stillCircles, work.numStillCircles, work.startIndex, work.collisions);
-		BlockCirclesLS(work.movingCircles, work.numMovingCircles, work.stillCircles, work.numStillCircles,work.startIndex, work.collisions);
+		//BlockCircles(work.movingCircles, work.numMovingCircles, work.stillCircles, work.numStillCircles, work.collisions);
+		BlockCirclesLS(work.movingCircles, work.numMovingCircles, work.stillCircles, work.numStillCircles, work.collisions);
 		{
 			std::unique_lock<std::mutex> l(worker.lock);
 			work.complete = true;

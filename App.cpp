@@ -107,12 +107,14 @@ void App::LoadModels()
 
 	mMasterBall = new Model("Models/Sphere.x", commandList);
 	mMasterBall->mMeshes[0]->mMaterial = new Material();
-	mMasterBall->mMeshes[0]->mMaterial->DiffuseAlbedo = XMFLOAT4{ 1,0,1,0 };
+	mMasterBall->mMeshes[0]->mMaterial->DiffuseAlbedo = 
+		XMFLOAT4{ mCircles->mMovingCircles[0].mColour.x,mCircles->mMovingCircles[0].mColour.y,mCircles->mMovingCircles[0].mColour.z,0};
 	//mModels.push_back(mMasterBall);
 
 	mMasterBall2 = new Model("Models/sphere.x", commandList);
 	mMasterBall2->mMeshes[0]->mMaterial = new Material();
-	mMasterBall2->mMeshes[0]->mMaterial->DiffuseAlbedo = XMFLOAT4{ 1,0.8,0,0 };
+	mMasterBall2->mMeshes[0]->mMaterial->DiffuseAlbedo = 
+		XMFLOAT4{ mCircles->mStillCircles[0].mColour.x,mCircles->mStillCircles[0].mColour.y,mCircles->mStillCircles[0].mColour.z,0 };
 	mMasterBall2->SetPosition(XMFLOAT3{ 8,0,0 });
 	mMasterBall2->SetScale(XMFLOAT3{ 1.0f, 1.0f, 1.0f });
 	//mModels.push_back(mMasterBall2);
@@ -140,59 +142,6 @@ void App::LoadModels()
 		mModels.push_back(ballModel);
 		mStillModels.push_back(ballModel);
 	}
-
-	//Model* plasmaModel = new Model("Models/plasmarifle.fbx", commandList);
-
-	//plasmaModel->SetPosition(XMFLOAT3{ -14.0f, 0.0f, 0.0f });
-	//plasmaModel->SetRotation(XMFLOAT3{ 0.0f, 0.0f, 0.0f });
-	//plasmaModel->SetScale(XMFLOAT3{ 0.005f, 0.005f, 0.005f });
-	//mModels.push_back(plasmaModel);
-
-	//// PBR per model texture display models
-	//Model* octoModel = new Model("Models/octopus.x", commandList, nullptr, "pjemy");
-
-	//octoModel->SetPosition(XMFLOAT3{ -6.0f, 0.0f, 0.0f });
-	//octoModel->SetRotation(XMFLOAT3{ -1.2f, 0.0f, 0.0f });
-	//octoModel->SetScale(XMFLOAT3{ 0.5f, 0.5f, 0.5f });
-	//mModels.push_back(octoModel);
-
-	//Model* octoModel2 = new Model("Models/octopus.x", commandList, nullptr, "tufted-leather");
-
-	//octoModel2->SetPosition(XMFLOAT3{ -10.0f, 0.0f, 0.0f });
-	//octoModel2->SetRotation(XMFLOAT3{ -1.2f, 0.0f, 0.0f });
-	//octoModel2->SetScale(XMFLOAT3{ 0.5f, 0.5f, 0.5f });
-	//mModels.push_back(octoModel2);
-
-	//Model* rockModel = new Model("Models/Rock.fbx", commandList);
-
-	//rockModel->SetPosition(XMFLOAT3{ -22.0f, 0.0f, 0.0f });
-	//rockModel->SetRotation(XMFLOAT3{ 0.0f, 0.0f, 0.0f });
-	//rockModel->SetScale(XMFLOAT3{ 0.05f, 0.05f, 0.05f });
-	//mModels.push_back(rockModel);
-
-	//// Base material colour models
-	//Model* foxModel = new Model("Models/polyfox.fbx", commandList);
-
-	//foxModel->SetPosition(XMFLOAT3{ 4.0f, 0.0f, 0.0f });
-	//foxModel->SetRotation(XMFLOAT3{ 0.0f, 0.0f, 0.0f });
-	//foxModel->SetScale(XMFLOAT3{ 0.01f, 0.01f, 0.01f });
-	//mModels.push_back(foxModel);
-
-	//Model* wolfModel = new Model("Models/Wolf.fbx", commandList);
-
-	//wolfModel->SetPosition(XMFLOAT3{ 6.0f, 0.0f, 0.0f });
-	//wolfModel->SetRotation(XMFLOAT3{ 0.0f, 0.0f, 0.0f });
-	//wolfModel->SetScale(XMFLOAT3{ 0.01f, 0.01f, 0.01f });
-
-	//mModels.push_back(wolfModel);
-
-	//Model* slimeModel = new Model("Models/PolyFrog.fbx", commandList);
-
-	//slimeModel->SetPosition(XMFLOAT3{ 9.0f, 0.0f, 0.0f });
-	//slimeModel->SetRotation(XMFLOAT3{ 0.0f, 0.0f, 0.0f });
-	//slimeModel->SetScale(XMFLOAT3{ 0.0015f, 0.0015f, 0.0015f });
-
-	//mModels.push_back(slimeModel);
 
 	// Sort models by PSO
 	int index = 0;

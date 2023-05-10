@@ -3,7 +3,6 @@
 
 #pragma warning(disable : 4996)
 
-const bool VISUAL = true;
 
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE prevInstance, PSTR cmdLine, int showCmd)
 {
