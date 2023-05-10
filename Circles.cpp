@@ -107,6 +107,7 @@ void Circles::InitCircles()
 	std::mt19937 gen(rd()); // seed the generator
 	std::uniform_int_distribution<> velDistr(MIN_VEL, MAX_VEL); // define the range
 	std::uniform_int_distribution<> posDistr(MIN_POS, MAX_POS); // define the range
+	std::uniform_int_distribution<> radDistr(MIN_RAD, MAX_RAD); // define the range
 	std::vector<Float3> usedPositions;
 	
 	mMovingCircles = new Circle[NUM_CIRCLES / 2];
@@ -146,7 +147,7 @@ void Circles::InitCircles()
 
 		mMovingCircles[i].mPosition = position;
 
-		mMovingCircles[i].mRadius = 10;
+		
 		mMovingCircles[i].mColour = { 1, 0, 1 };
 		bool velicityZero = true;
 		auto velocity = Float3{ 0,0,0 };
@@ -159,6 +160,10 @@ void Circles::InitCircles()
 			if (velocity != Float3{ 0,0,0 }) velicityZero = false;
 		}
 		mMovingCircles[i].mVelocity = velocity;
+
+		if (RANDOM_RADIUS) mMovingCircles[i].mRadius = radDistr(gen);
+		else mMovingCircles[i].mRadius = 10;
+
 		mMovingCircles[i].mHealth = 100;
 
 		usedPositions.push_back(position);
@@ -200,7 +205,10 @@ void Circles::InitCircles()
 
 		mStillCircles[i].mPosition = position;
 		mStillCircles[i].mVelocity = { 0,0,0 };
-		mStillCircles[i].mRadius = 10;
+
+		if (RANDOM_RADIUS) mStillCircles[i].mRadius = radDistr(gen);
+		else mStillCircles[i].mRadius = 10;
+
 		mStillCircles[i].mColour = { 1, 0.8, 0 };
 
 		mStillCircles[i].mHealth = 100;
@@ -243,7 +251,6 @@ void Circles::ClearMemory()
 
 void Circles::BlockCirclesLS(Circle* movingCircles, uint32_t numMovingCircles, Circle* stillCircles, uint32_t numStillCircles, std::vector<Collision>& collisions)
 {
-	Circle* nextCircle = movingCircles + 1;
 	Circle* movingEnd = movingCircles + numMovingCircles - 1;
 
 	const Circle* stillEnd = stillCircles + numStillCircles - 1;
@@ -260,7 +267,7 @@ void Circles::BlockCirclesLS(Circle* movingCircles, uint32_t numMovingCircles, C
 		int mRSweepSide = 15;
 		if (RANDOM_RADIUS)
 		{
-			mLSweepSide = movingCircles->mRadius - 5;
+			mLSweepSide = movingCircles->mRadius + 5;
 			mRSweepSide = movingCircles->mRadius + 5;
 		}
 

@@ -7,16 +7,18 @@
 const bool VISUAL = true;
 
 const uint32_t NUM_CIRCLES = 100000;
-const int MAX_POS = 10000;
-const int MIN_POS = -10000;
+const int MAX_POS = 12000;
+const int MIN_POS = -12000;
 const int MAX_VEL = 5;
 const int MIN_VEL = -5;
+const int MAX_RAD = 20;
+const int MIN_RAD = 10;
 const int WALL_DISTANCE_FROM_EDGE = 100;
 
 const bool OUTPUT_COLLISIONS = false;
 const bool THREADED = true;
 const bool WALLS = true;
-const bool RANDOM_RADIUS = false;
+const bool RANDOM_RADIUS = true;
 
 class Circles
 {

@@ -109,6 +109,7 @@ void App::LoadModels()
 	mMasterBall->mMeshes[0]->mMaterial = new Material();
 	mMasterBall->mMeshes[0]->mMaterial->DiffuseAlbedo = 
 		XMFLOAT4{ mCircles->mMovingCircles[0].mColour.x,mCircles->mMovingCircles[0].mColour.y,mCircles->mMovingCircles[0].mColour.z,0};
+	mMasterBall->SetScale(XMFLOAT3{ 1.0f, 1.0f, 1.0f });
 	//mModels.push_back(mMasterBall);
 
 	mMasterBall2 = new Model("Models/sphere.x", commandList);
@@ -121,24 +122,18 @@ void App::LoadModels()
 
 	for (int i = 0; i < NUM_CIRCLES / 2; i++)
 	{
-		//Model* ballModel = new Model("Models/sphere.x", mGraphics->mD3DDevice.Get(), mGraphics->mCommandList.Get());
 		Model* ballModel = new Model("", mGraphics->mCommandList.Get(), mMasterBall->mMeshes[0]);
 		ballModel->SetPosition(XMFLOAT3{ mCircles->mMovingCircles[i].mPosition.x,mCircles->mMovingCircles[i].mPosition.y,mCircles->mMovingCircles[i].mPosition.z});
-		ballModel->SetScale(XMFLOAT3{ 1.0f, 1.0f, 1.0f });
-		//ballModel->mMeshes[0]->mMaterial = new Material();
-		//ballModel->mMeshes[0]->mMaterial->DiffuseAlbedo = XMFLOAT4{ 1,0,1,0 };
+		ballModel->SetScale(XMFLOAT3{ float(mCircles->mMovingCircles[i].mRadius / 10.0f), float(mCircles->mMovingCircles[i].mRadius / 10.0f), float(mCircles->mMovingCircles[i].mRadius / 10.0f) });
 		mModels.push_back(ballModel);
 		mMovingModels.push_back(ballModel);
 	}
 
 	for (int i = 0; i < NUM_CIRCLES / 2; i++)
 	{
-		//Model* ballModel = new Model("Models/sphere.x", mGraphics->mD3DDevice.Get(), mGraphics->mCommandList.Get());
 		Model* ballModel = new Model("", mGraphics->mCommandList.Get(), mMasterBall2->mMeshes[0]);
 		ballModel->SetPosition(XMFLOAT3{ mCircles->mStillCircles[i].mPosition.x,mCircles->mStillCircles[i].mPosition.y,mCircles->mStillCircles[i].mPosition.z });
-		ballModel->SetScale(XMFLOAT3{ 1.0f, 1.0f, 1.0f });
-		//ballModel->mMeshes[0]->mMaterial = new Material();
-		//ballModel->mMeshes[0]->mMaterial->DiffuseAlbedo = XMFLOAT4{ 1,0.8,0,0 };
+		ballModel->SetScale(XMFLOAT3{ float(mCircles->mStillCircles[i].mRadius / 10.0f), float(mCircles->mStillCircles[i].mRadius / 10.0f), float(mCircles->mStillCircles[i].mRadius / 10.0f) });
 		mModels.push_back(ballModel);
 		mStillModels.push_back(ballModel);
 	}
