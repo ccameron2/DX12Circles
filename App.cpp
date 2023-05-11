@@ -286,7 +286,7 @@ void App::Update(float frameTime)
 		(
 			XMFLOAT3{ mCircles->mStillCircles[i].mPosition.x,mCircles->mStillCircles[i].mPosition.y,mCircles->mStillCircles[i].mPosition.z }
 		);
-		mMovingModels[i]->mNumDirtyFrames += FrameResources.size();
+		mStillModels[i]->mNumDirtyFrames += FrameResources.size();
 	}
 
 	// Update model selected in GUI

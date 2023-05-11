@@ -3,6 +3,7 @@
 #include "Timer.h"
 #include <thread>
 #include <condition_variable>
+#include <cmath>
 
 const bool VISUAL = true;
 
@@ -18,7 +19,9 @@ const int WALL_DISTANCE_FROM_EDGE = 100;
 const bool OUTPUT_COLLISIONS = false;
 const bool THREADED = true;
 const bool WALLS = true;
-const bool RANDOM_RADIUS = true;
+const bool RANDOM_RADIUS = false;
+const bool SPHERES = false;
+const bool CIRCLE_DEATH = false;
 
 class Circles
 {
@@ -106,7 +109,42 @@ private:
 		int mRadius;
 		int mHealth;
 		Float3 mColour;
+		float Distance(float x1, float y1, float x2, float y2)
+		{
+			return std::sqrt((x2 - x1) * (x2 - x1) + (y2 - y1) * (y2 - y1));
+		}
+		// Calculate the dot product of two vectors
+		float DotProduct(float x1, float y1, float x2, float y2)
+		{
+			return x1 * x2 + y1 * y2;
+		}
+		// Reflect a circle around another circle
+		void Reflect(Circle* stillCircle)
+		{
+			auto stillPos = stillCircle->mPosition;
+			auto movingPos = this->mPosition;
+			auto x1 = movingPos.x;
+			auto y1 = movingPos.y;
+			auto x2 = stillPos.x;
+			auto y2 = stillPos.y;
+
+			// Calculate the normal vector pointing from c1 to c2
+			auto distance = Distance(x1,y1,x2,y2);
+			float nx = (x2 - x1) / distance;
+			float ny = (y2 - y1) / distance;
+
+			auto movingVel = this->mVelocity;
+			auto x = movingVel.x;
+			auto y = movingVel.y;
+			float dot = DotProduct(x, y, nx, ny);
+			this->mVelocity.x = x - 2 * dot * nx;
+			this->mVelocity.y = y - 2 * dot * ny;
+		}
 	};
+
+	// To get templates used, use Circles and Spheres. Circles store a Float2 instead of a Float3.
+	// Init spheres instead of circles in a diff function with a bool check and then in the collision,
+	// use movingCircle->Reflect(stillcircle) or movingCircle->Distance(stillCircle)
 
 	struct WorkerThread
 	{
@@ -139,7 +177,6 @@ public:
 
 	void BlockCirclesThread(uint32_t thread);
 	void SortCirclesByX(Circle* circles, int numCircles);
-	bool CheckWalls(Circle* circle);
 	std::vector<Collision> mCollisions;
 
 	Circle* mMovingCircles;

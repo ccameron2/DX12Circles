@@ -4,15 +4,15 @@
 #include <iostream>
 
 // Calculate the distance between two points
-float Distance(float x1, float y1, float x2, float y2)
+float Distance(float x1, float y1, float x2, float y2, float z1 = 0, float z2 = 0)
 {
-	return std::sqrt((x2 - x1) * (x2 - x1) + (y2 - y1) * (y2 - y1));
+	return std::sqrt((x2 - x1) * (x2 - x1) + (y2 - y1) * (y2 - y1) + (z2 - z1) * (z2 - z1));
 }
 
 // Calculate the dot product of two vectors
-float DotProduct(float x1, float y1, float x2, float y2)
+float DotProduct(float x1, float y1, float x2, float y2, float z1 = 0, float z2 = 0)
 {
-	return x1 * x2 + y1 * y2;
+	return x1 * x2 + y1 * y2 + z1 * z2;
 }
 
 // Reflect a vector around another vector
@@ -88,6 +88,7 @@ Circles::~Circles()
 	{
 		mBlockCirclesWorkers[i].first.thread.detach();
 	}
+	ClearMemory();
 }
 
 void Circles::InitCircles()
@@ -258,6 +259,12 @@ void Circles::BlockCirclesLS(Circle* movingCircles, uint32_t numMovingCircles, C
 	{
 		auto x1 = movingCircles->mPosition.x;
 		auto y1 = movingCircles->mPosition.y;
+		auto z1 = movingCircles->mPosition.z;
+
+		if (CIRCLE_DEATH) 
+		{
+			if (movingCircles->mHealth <= 0) continue;
+		} 
 
 		auto still = stillCircles;
 		int stillIndex = 0;
@@ -292,9 +299,20 @@ void Circles::BlockCirclesLS(Circle* movingCircles, uint32_t numMovingCircles, C
 				auto minColDistance = 400;
 				if (RANDOM_RADIUS) minColDistance = (movingCircles->mRadius + blocker->mRadius)* (movingCircles->mRadius + blocker->mRadius);
 
+				if (CIRCLE_DEATH)
+				{
+					if (blocker->mHealth <= 0) continue;
+				}
+
 				auto x2 = blocker->mPosition.x;
 				auto y2 = blocker->mPosition.y;
-				auto distanceBetweenCirclesSquared = ((x2 - x1) * (x2 - x1)) + ((y2 - y1) * (y2 - y1));
+				auto z2 = 0.0f;
+				if (SPHERES) z2 = blocker->mPosition.z;
+
+				auto distanceBetweenCirclesSquared = 0.0f;
+				if (SPHERES) distanceBetweenCirclesSquared = ((x2 - x1) * (x2 - x1)) + ((y2 - y1) * (y2 - y1) + (z2 - z1) * (z2 - z1));					
+				else distanceBetweenCirclesSquared = ((x2 - x1) * (x2 - x1)) + ((y2 - y1) * (y2 - y1));
+
 				if (distanceBetweenCirclesSquared <= minColDistance)
 				{
 					if(movingCircles->mHealth - 20 >= 0) movingCircles->mHealth -= 20;
@@ -302,12 +320,15 @@ void Circles::BlockCirclesLS(Circle* movingCircles, uint32_t numMovingCircles, C
 
 					if (OUTPUT_COLLISIONS) collisions.push_back(Collision{ movingCircles->mName, blocker->mName, movingCircles->mHealth, blocker->mHealth, mTimer->GetTime()});
 
-					auto distance = Distance(x1, y1, x2, y2);
-					float nx = (x2 - x1) / distance;
-					float ny = (y2 - y1) / distance;
+					//auto distance = Distance(x1, y1, x2, y2);
+					//float nx = (x2 - x1) / distance;
+					//float ny = (y2 - y1) / distance;
+
+					//// v - 2 * (v . n) * n
+					//Reflect(movingCircles->mVelocity.x, movingCircles->mVelocity.y, nx, ny);
 
 					// v - 2 * (v . n) * n
-					Reflect(movingCircles->mVelocity.x, movingCircles->mVelocity.y, nx, ny);
+					movingCircles->Reflect(blocker);
 					col = true;
 					break;
 				}
@@ -326,9 +347,19 @@ void Circles::BlockCirclesLS(Circle* movingCircles, uint32_t numMovingCircles, C
 				auto minColDistance = 400;
 				if (RANDOM_RADIUS) minColDistance = (movingCircles->mRadius + blocker->mRadius) * (movingCircles->mRadius + blocker->mRadius);
 
+				if (CIRCLE_DEATH)
+				{
+					if (blocker->mHealth <= 0) continue;
+				}
+
 				auto x2 = blocker->mPosition.x;
 				auto y2 = blocker->mPosition.y;
-				auto distanceBetweenCirclesSquared = ((x2 - x1) * (x2 - x1)) + ((y2 - y1) * (y2 - y1));
+				auto z2 = 0.0f;
+				if(SPHERES) z2 = blocker->mPosition.z;
+
+				auto distanceBetweenCirclesSquared = 0.0f;
+				if (SPHERES) distanceBetweenCirclesSquared = ((x2 - x1) * (x2 - x1)) + ((y2 - y1) * (y2 - y1) + (z2 - z1) * (z2 - z1));
+				else distanceBetweenCirclesSquared = ((x2 - x1) * (x2 - x1)) + ((y2 - y1) * (y2 - y1));
 				if (distanceBetweenCirclesSquared <= minColDistance)
 				{
 					if (movingCircles->mHealth - 20 >= 0) movingCircles->mHealth -= 20;
@@ -336,12 +367,15 @@ void Circles::BlockCirclesLS(Circle* movingCircles, uint32_t numMovingCircles, C
 
 					if (OUTPUT_COLLISIONS) collisions.push_back(Collision{ movingCircles->mName, blocker->mName, movingCircles->mHealth, blocker->mHealth, mTimer->GetTime() });
 
-					auto distance = Distance(x1, y1, x2, y2);
-					float nx = (x2 - x1) / distance;
-					float ny = (y2 - y1) / distance;
+					//auto distance = Distance(x1, y1, x2, y2);
+					//float nx = (x2 - x1) / distance;
+					//float ny = (y2 - y1) / distance;
+
+					//// v - 2 * (v . n) * n
+					//Reflect(movingCircles->mVelocity.x, movingCircles->mVelocity.y, nx, ny);
 
 					// v - 2 * (v . n) * n
-					Reflect(movingCircles->mVelocity.x, movingCircles->mVelocity.y, nx, ny);
+					movingCircles->Reflect(blocker);
 					col = true;
 					break;
 				}
@@ -396,9 +430,9 @@ void Circles::BlockCirclesLS(Circle* movingCircles, uint32_t numMovingCircles, C
 		++movingCircles;
 	}
 }
+
 void Circles::BlockCircles(Circle* movingCircles, uint32_t numMovingCircles, Circle* stillCircles, uint32_t numStillCircles, std::vector<Collision>& collisions)
 {
-	Circle* nextCircle = movingCircles + 1;
 	Circle* movingEnd = movingCircles + numMovingCircles - 1;
 
 	const Circle* stillEnd = stillCircles + numStillCircles - 1;
@@ -407,13 +441,23 @@ void Circles::BlockCircles(Circle* movingCircles, uint32_t numMovingCircles, Cir
 		auto x1 = movingCircles->mPosition.x;
 		auto y1 = movingCircles->mPosition.y;
 
+		if (CIRCLE_DEATH)
+		{
+			if (movingCircles->mHealth <= 0) continue;
+		}
+
 		auto still = stillCircles;
 		bool col = false;
 		while (still != stillEnd)
 		{
 			auto minColDistance = 400;
 			if (RANDOM_RADIUS) minColDistance = (movingCircles->mRadius + still->mRadius) * (movingCircles->mRadius + still->mRadius);
-
+			
+			if (CIRCLE_DEATH)
+			{
+				if (still->mHealth <= 0) continue;
+			}
+			
 			auto x2 = still->mPosition.x;
 			auto y2 = still->mPosition.y;
 			auto distanceBetweenCirclesSquared = ((x2 - x1) * (x2 - x1)) + ((y2 - y1) * (y2 - y1));
@@ -428,13 +472,9 @@ void Circles::BlockCircles(Circle* movingCircles, uint32_t numMovingCircles, Cir
 
 				if(OUTPUT_COLLISIONS) collisions.push_back(Collision{ movingCircles->mName, still->mName, movingCircles->mHealth, still->mHealth, mTimer->GetTime() });
 
-				// Calculate the normal vector pointing from c1 to c2
-				auto distance = Distance(x1, y1, x2, y2);
-				float nx = (x2 - x1) / distance;
-				float ny = (y2 - y1) / distance;
+				// v - 2 * (v . n) * n			
+				movingCircles->Reflect(still);
 
-				// v - 2 * (v . n) * n
-				Reflect(movingCircles->mVelocity.x, movingCircles->mVelocity.y, nx, ny);
 				col = true;
 				break;
 			}
