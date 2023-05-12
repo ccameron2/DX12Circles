@@ -4,6 +4,7 @@
 #include <thread>
 #include <condition_variable>
 #include <cmath>
+#include <string>
 
 // TODO:
 // Fix sphere collision
@@ -11,10 +12,10 @@
 // 
 
 // Visualisation toggle
-const bool VISUAL = false;
+const bool VISUAL = true;
 
 // Number of circles to spawn
-const uint32_t NUM_CIRCLES = 1000000;
+const uint32_t NUM_CIRCLES = 10000;
 
 const int MAX_POS = 5000; // Max position of spawn area
 const int MIN_POS = -5000; // Min position of spawn area
@@ -26,12 +27,12 @@ const int WALL_DISTANCE_FROM_EDGE = 100; // Wall distance from outside spawn are
 
 const bool OUTPUT_COLLISIONS = false; // Toggle output collisions in console mode
 const bool THREADED = true; // Toggle if collision detection uses mulithreading
-const bool LINE_SWEEP = true; // Toggle line sweep collision detection
+const bool LINE_SWEEP = false; // Toggle line sweep collision detection
 const bool WALLS = true; // Toggle walls
 const bool RANDOM_RADIUS = false; // Toggle random radius for circles
 const bool SPHERES = false;  // Toggle 3D spheres
 const bool CIRCLE_DEATH = false; // Toggle circle death when HP <= 0. No visualisation for circle death yet, they just dont effect collision or move anymore
-const bool MOVING_MOVING = false; // Toggle moving-moving collisions
+const bool MOVING_MOVING = true; // Toggle moving-moving collisions
 
 struct Float3
 {
@@ -160,27 +161,32 @@ private:
 			float dot = DotProduct(x, y, nx, ny);
 			this->mVelocity.x = x - 2 * dot * nx;
 			this->mVelocity.y = y - 2 * dot * ny;
-			this->mPosition += Float3{ -nx,-ny,0 };
+
+			this->mPosition += Float3{ -nx, -ny, 0 };
 		}
 	};
 
 	struct Sphere
 	{
-		std::string mName;
-		Float3 mPosition;
-		Float3 mVelocity;
-		int mRadius;
-		int mHealth;
-		Float3 mColour;
+		std::string mName; // Name
+		Float3 mPosition; // Position
+		Float3 mVelocity; // Velocity
+		int mRadius; // Radius
+		int mHealth; // Health
+		Float3 mColour; // Colour
+
+		// Calculat distance between two 3D points
 		float Distance(float x1, float y1, float x2, float y2, float z1, float z2)
 		{
 			return std::sqrt((x2 - x1) * (x2 - x1) + (y2 - y1) * (y2 - y1) + (z1 + z2) * (z1 + z2));
 		}
-		// Calculate the dot product of two vectors
+
+		// Calculate the dot product of two 3D points
 		float DotProduct(float x1, float y1, float z1, float x2, float y2, float z2)
 		{
 			return x1 * x2 + y1 * y2 + z1 * z2;
 		}
+
 		// Reflect a circle around another circle
 		void Reflect(Sphere* stillCircle)
 		{
@@ -192,6 +198,7 @@ private:
 			auto y2 = stillPos.y;
 			auto z1 = movingPos.z;
 			auto z2 = stillPos.z;
+
 			// Calculate the normal vector pointing from c1 to c2
 			auto distance = Distance(x1, y1, x2, y2, z1, z2);
 
@@ -212,6 +219,7 @@ private:
 		}
 	};
 
+	// Multithreading worker
 	struct WorkerThread
 	{
 		std::thread             thread;
@@ -219,6 +227,7 @@ private:
 		std::mutex              lock;
 	};
 
+	// Mulithreading work (Spheres or circles)
 	template<class T>
 	struct BlockCirclesWork
 	{
@@ -231,34 +240,51 @@ private:
 		std::vector<Collision> collisions;
 	};
 
+	// Multithreading data
 	static const uint32_t MAX_WORKERS = 31;
 	std::pair<WorkerThread, BlockCirclesWork<Circle>> mBlockCirclesWorkers[MAX_WORKERS];
 	std::pair<WorkerThread, BlockCirclesWork<Sphere>> mBlockSpheresWorkers[MAX_WORKERS];
-
 	uint32_t mNumWorkers;
 public:
 	~Circles();
+	
+	// Create circles
 	void InitCircles();
+
+	// Update circles for this frame
 	void UpdateCircles(float frameTime = 1);
+
+	// Output frametime and collisions
 	void OutputFrame();
+
+	// Destroy circles and close workers
 	void ClearMemory();
 
+	// Block circles brute force (supports moving-moving)
 	template<class T>
 	void BlockCircles(T* movingCircles, uint32_t numMovingCircles, T* firstMovingCircle, T* stillCircles, uint32_t numStillCircles, std::vector<Collision>& collisions);
 	
+	// Block circles line sweep
 	template<class T>
 	void BlockCirclesLS(T* movingCircles, uint32_t numMovingCircles, T* stillCircles, uint32_t numStillCircles, std::vector<Collision>& collisions);
 
+	// Multithreading call to BlockCircles
 	void BlockCirclesThread(uint32_t thread);
 
+	// Sort circles by ascending x coordinate
 	template<class T>
 	void SortCirclesByX(T* circles, int numCircles);
 	std::vector<Collision> mCollisions;
 
+	// Circle arrays
 	Circle* mMovingCircles;
 	Circle* mStillCircles;
+
+	// Sphere arrays
 	Sphere* mMovingSpheres;
 	Sphere* mStillSpheres;
+
+	// Performance timer
 	Timer* mTimer;
 };
 
