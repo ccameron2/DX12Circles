@@ -11,7 +11,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE prevInstance, PSTR cmdLine, in
     _CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
     #endif
 
-    // Create the app
+    // Create the D3D12 app
     if (VISUAL)
     {
         auto app = std::make_unique<App>();
@@ -24,13 +24,18 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE prevInstance, PSTR cmdLine, in
         freopen("CONOUT$", "w", stdout);
         freopen("CONOUT$", "w", stderr);
 
+        // Init circles
         auto circles = new Circles();
         circles->InitCircles();
+
+        // Update circles in loop
         while (true)
         {
             circles->UpdateCircles();
             circles->OutputFrame();
         }
+        
+        // Clear memory
         circles->ClearMemory();
     }
 

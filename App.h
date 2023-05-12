@@ -104,7 +104,7 @@ private:
 	vector<Model*> mSimpleTexModels;
 	vector<Model*> mColourModels;
 
-
+	// Circle models
 	Model* mMasterBall;
 	Model* mMasterBall2;
 	vector<Model*> mMovingModels;
@@ -144,6 +144,7 @@ private:
 	void RenderThread(int thread);
 	void RenderCircles(int thread, int start, int end);
 
+	// Threaded rendering data
 	struct WorkerThread
 	{
 		std::thread             thread;
@@ -158,6 +159,7 @@ private:
 		int  end = 0;
 	};
 
+	// Multithreaded rendering workers
 	static const int MAX_WORKERS = 128;
 	std::pair<WorkerThread, RenderWork> mRenderWorkers[MAX_WORKERS];
 	int mNumRenderWorkers = 0;

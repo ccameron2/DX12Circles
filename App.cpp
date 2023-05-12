@@ -103,25 +103,21 @@ void App::LoadModels()
 {
 	auto commandList = mGraphics->mCommandList.Get();
 
-	// Multiple meshes, full PBR textured per mesh
-
+	// Circle base models
 	mMasterBall = new Model("Models/Sphere.x", commandList);
 	mMasterBall->mMeshes[0]->mMaterial = new Material();
 	if(SPHERES) mMasterBall->mMeshes[0]->mMaterial->DiffuseAlbedo = XMFLOAT4{ mCircles->mMovingSpheres[0].mColour.x,mCircles->mMovingSpheres[0].mColour.y,mCircles->mMovingSpheres[0].mColour.z,0 };
 	else mMasterBall->mMeshes[0]->mMaterial->DiffuseAlbedo = XMFLOAT4{ mCircles->mMovingCircles[0].mColour.x,mCircles->mMovingCircles[0].mColour.y,mCircles->mMovingCircles[0].mColour.z,0 };
-	mMasterBall->SetScale(XMFLOAT3{ 1.0f, 1.0f, 1.0f });
-	//mModels.push_back(mMasterBall);
 
 	mMasterBall2 = new Model("Models/sphere.x", commandList);
 	mMasterBall2->mMeshes[0]->mMaterial = new Material();
 	if(SPHERES) mMasterBall2->mMeshes[0]->mMaterial->DiffuseAlbedo = XMFLOAT4{ mCircles->mStillSpheres[0].mColour.x,mCircles->mStillSpheres[0].mColour.y,mCircles->mStillSpheres[0].mColour.z,0 };
 	else mMasterBall2->mMeshes[0]->mMaterial->DiffuseAlbedo = XMFLOAT4{ mCircles->mStillCircles[0].mColour.x,mCircles->mStillCircles[0].mColour.y,mCircles->mStillCircles[0].mColour.z,0 };
-	mMasterBall2->SetPosition(XMFLOAT3{ 8,0,0 });
-	mMasterBall2->SetScale(XMFLOAT3{ 1.0f, 1.0f, 1.0f });
-	//mModels.push_back(mMasterBall2);
 
+	// Create model from base model for each moving circle
 	for (int i = 0; i < NUM_CIRCLES / 2; i++)
 	{
+		// Pass mesh in from base model
 		Model* ballModel = new Model("", mGraphics->mCommandList.Get(), mMasterBall->mMeshes[0]);
 		if (SPHERES)
 		{
@@ -138,6 +134,7 @@ void App::LoadModels()
 		mMovingModels.push_back(ballModel);
 	}
 
+	// Create model from base model for each still circle
 	for (int i = 0; i < NUM_CIRCLES / 2; i++)
 	{
 		Model* ballModel = new Model("", mGraphics->mCommandList.Get(), mMasterBall2->mMeshes[0]);
@@ -288,8 +285,10 @@ void App::Update(float frameTime)
 	if (mWindow->mUp)	mCamera->MoveUp();
 	if (mWindow->mDown)	mCamera->MoveDown();
 
+	// Update circles for this frame
 	mCircles->UpdateCircles(frameTime);
 
+	// Set model positions for moving circles
 	for (int i = 0; i < NUM_CIRCLES / 2; i++)
 	{
 		if (SPHERES)
@@ -308,6 +307,8 @@ void App::Update(float frameTime)
 		}
 		mMovingModels[i]->mNumDirtyFrames += FrameResources.size();
 	}
+
+	// Set model positions for still circles
 	for (int i = 0; i < NUM_CIRCLES / 2; i++)
 	{
 		if (SPHERES)

@@ -216,24 +216,6 @@ void Circles::InitCircles()
 		float zrand = posDistr(gen);
 		if (SPHERES) position = Float3{ xrand, yrand, zrand };
 		else position = Float3{ xrand, yrand, 0 };
-		
-		//while (!posChecked)
-		//{
-		//	// Generate a random position
-		//	float xrand = posDistr(gen);
-		//	float yrand = posDistr(gen);
-		//	position = Float3{ xrand, yrand, 0 };
-
-		//	// Check if the position has already been used
-		//	auto it = std::find_if(usedPositions.begin(), usedPositions.end(),
-		//		[position](const Float3& p) { return p.x == position.x && p.y == position.y; });
-		//	if (it == usedPositions.end())
-		//	{
-		//		// Position is unique, so use it
-		//		usedPositions.push_back(position);
-		//		posChecked = true;
-		//	}
-		//}
 
 		if (SPHERES) mMovingSpheres[i].mPosition = position;
 		else mMovingCircles[i].mPosition = position;		
@@ -271,7 +253,6 @@ void Circles::InitCircles()
 			mMovingCircles[i].mColour = { 1, 0, 1 };
 			mMovingCircles[i].mHealth = 100;
 		}
-		//usedPositions.push_back(position);
 	}
 
 	for (int i = 0; i < NUM_CIRCLES / 2; i++)
@@ -289,24 +270,6 @@ void Circles::InitCircles()
 		float zrand = posDistr(gen);
 		if (SPHERES) position = Float3{ xrand, yrand, zrand };
 		else position = Float3{ xrand, yrand, 0 };
-
-		//while (!posChecked)
-		//{
-		//	// Generate a random position
-		//	float xrand = posDistr(gen);
-		//	float yrand = posDistr(gen);
-		//	position = Float3{ xrand, yrand, 0 };
-
-		//	// Check if the position has already been used
-		//	auto it = std::find_if(usedPositions.begin(), usedPositions.end(),
-		//		[position](const Float3& p) { return p.x == position.x && p.y == position.y; });
-		//	if (it == usedPositions.end())
-		//	{
-		//		// Position is unique, so use it
-		//		usedPositions.push_back(position);
-		//		posChecked = true;
-		//	}
-		//}
 
 		if (SPHERES)
 		{
@@ -332,8 +295,6 @@ void Circles::InitCircles()
 
 			mStillCircles[i].mHealth = 100;
 		}
-
-		//usedPositions.push_back(position);
 	}
 
 	if(SPHERES) SortCirclesByX(mStillSpheres, NUM_CIRCLES / 2);

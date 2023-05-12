@@ -10,121 +10,135 @@
 // Line sweep moving-moving
 // 
 
+// Visualisation toggle
 const bool VISUAL = false;
 
+// Number of circles to spawn
 const uint32_t NUM_CIRCLES = 1000000;
-const int MAX_POS = 12000; //12000
-const int MIN_POS = -12000;
-const int MAX_VEL = 5;
-const int MIN_VEL = -5;
-const int MAX_RAD = 20;
-const int MIN_RAD = 10;
-const int WALL_DISTANCE_FROM_EDGE = 100;
 
-const bool OUTPUT_COLLISIONS = false;
-const bool THREADED = true;
-const bool LINE_SWEEP = true;
-const bool WALLS = true;
-const bool RANDOM_RADIUS = false;
-const bool SPHERES = false;
-const bool CIRCLE_DEATH = false;
-const bool MOVING_MOVING = false;
+const int MAX_POS = 5000; // Max position of spawn area
+const int MIN_POS = -5000; // Min position of spawn area
+const int MAX_VEL = 5; // Max velocity of circle
+const int MIN_VEL = -5; // Min velocity of circle
+const int MAX_RAD = 20; // Max radius of circle
+const int MIN_RAD = 10; // Min radius of circle
+const int WALL_DISTANCE_FROM_EDGE = 100; // Wall distance from outside spawn area
+
+const bool OUTPUT_COLLISIONS = false; // Toggle output collisions in console mode
+const bool THREADED = true; // Toggle if collision detection uses mulithreading
+const bool LINE_SWEEP = true; // Toggle line sweep collision detection
+const bool WALLS = true; // Toggle walls
+const bool RANDOM_RADIUS = false; // Toggle random radius for circles
+const bool SPHERES = false;  // Toggle 3D spheres
+const bool CIRCLE_DEATH = false; // Toggle circle death when HP <= 0. No visualisation for circle death yet, they just dont effect collision or move anymore
+const bool MOVING_MOVING = false; // Toggle moving-moving collisions
+
+struct Float3
+{
+	float x;
+	float y;
+	float z;
+	Float3 operator* (float input) // Mul float input
+	{
+		Float3 result;
+		result.x = this->x * input;
+		result.y = this->y * input;
+		result.z = this->z * input;
+		return result;
+	}
+	Float3 operator* (Float3 input) // Mul float3 input
+	{
+		Float3 result;
+		result.x = this->x * input.x;
+		result.y = this->y * input.y;
+		result.z = this->z * input.z;
+		return result;
+	}
+	Float3 operator+= (Float3 input) // Add float3
+	{
+		Float3 result;
+		result.x = this->x += input.x;
+		result.y = this->y += input.y;
+		result.z = this->z += input.z;
+		return result;
+	}
+	Float3 operator- (Float3 input) // Take float3
+	{
+		Float3 result;
+		result.x = this->x - input.x;
+		result.y = this->y - input.y;
+		result.z = this->z - input.z;
+		return result;
+	}
+	Float3 operator-= (Float3 input)
+	{
+		Float3 result;
+		result.x = this->x -= input.x;
+		result.y = this->y -= input.y;
+		result.z = this->z -= input.z;
+		return result;
+	}
+	Float3 operator- (float input) // Take float
+	{
+		Float3 result;
+		result.x = this->x - input;
+		result.y = this->y - input;
+		result.z = this->z - input;
+		return result;
+	}
+	bool operator==(Float3 input) // Compare float3 
+	{
+		if (this->x == input.x && this->y == input.y && this->z == input.z)
+		{
+			return true;
+		}
+		else
+		{
+			return false;
+		}
+	}
+};
 
 class Circles
 {
 private:
-	struct Float3
-	{
-		float x;
-		float y;
-		float z;
-		Float3 operator* (float input)
-		{
-			Float3 result;
-			result.x = this->x * input;
-			result.y = this->y * input;
-			result.z = this->z * input;
-			return result;
-		}
-		Float3 operator* (Float3 input)
-		{
-			Float3 result;
-			result.x = this->x * input.x;
-			result.y = this->y * input.y;
-			result.z = this->z * input.z;
-			return result;
-		}
-		Float3 operator+= (Float3 input)
-		{
-			Float3 result;
-			result.x = this->x += input.x;
-			result.y = this->y += input.y;
-			result.z = this->z += input.z;
-			return result;
-		}
-		Float3 operator- (Float3 input)
-		{
-			Float3 result;
-			result.x = this->x - input.x;
-			result.y = this->y - input.y;
-			result.z = this->z - input.z;
-			return result;
-		}
-		Float3 operator-= (Float3 input)
-		{
-			Float3 result;
-			result.x = this->x -= input.x;
-			result.y = this->y -= input.y;
-			result.z = this->z -= input.z;
-			return result;
-		}
-		Float3 operator- (float input)
-		{
-			Float3 result;
-			result.x = this->x - input;
-			result.y = this->y - input;
-			result.z = this->z - input;
-			return result;
-		}
-		bool operator==(Float3 input)
-		{
-			if (this->x == input.x && this->y == input.y && this->z == input.z)
-			{
-				return true;
-			}
-			else
-			{
-				return false;
-			}
-		}
-	};
 
+	// Struct to hold collisions for console output
 	struct Collision
 	{
+		// Names
 		std::string Circle1Name;
 		std::string Circle2Name;
+
+		// Health
 		int Circle1Health;
 		int Circle2Health;
+
+		// Time of collision
 		float TimeOfCollision;
 	};
 	
 	struct Circle
 	{
-		std::string mName;
-		Float3 mPosition;
-		Float3 mVelocity;
-		int mRadius;
-		int mHealth;
-		Float3 mColour;
+		std::string mName; // Name
+		Float3 mPosition; // Position
+		Float3 mVelocity; // Velocity
+		int mRadius; // Radius
+		int mHealth; // Health
+		Float3 mColour; // Colour
+
+		// Cakculate distance between 2D points
 		float Distance(float x1, float y1, float x2, float y2)
 		{
 			return std::sqrt((x2 - x1) * (x2 - x1) + (y2 - y1) * (y2 - y1));
 		}
-		// Calculate the dot product of two vectors
+
+		// Calculate the dot product of 2D points
 		float DotProduct(float x1, float y1, float x2, float y2)
 		{
 			return x1 * x2 + y1 * y2;
 		}
+
 		// Reflect a circle around another circle
 		void Reflect(Circle* stillCircle)
 		{
@@ -146,7 +160,7 @@ private:
 			float dot = DotProduct(x, y, nx, ny);
 			this->mVelocity.x = x - 2 * dot * nx;
 			this->mVelocity.y = y - 2 * dot * ny;
-			//this->mPosition += Float3{ -nx,-ny,0 };
+			this->mPosition += Float3{ -nx,-ny,0 };
 		}
 	};
 
