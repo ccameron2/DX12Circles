@@ -6,19 +6,14 @@
 #include <cmath>
 #include <string>
 
-// TODO:
-// Fix sphere collision
-// Line sweep moving-moving
-// 
-
 // Visualisation toggle
 const bool VISUAL = true;
 
 // Number of circles to spawn
-const uint32_t NUM_CIRCLES = 10000;
+const uint32_t NUM_CIRCLES = 100000;
 
-const int MAX_POS = 5000; // Max position of spawn area
-const int MIN_POS = -5000; // Min position of spawn area
+const int MAX_POS = 12000; // Max position of spawn area
+const int MIN_POS = -12000; // Min position of spawn area
 const int MAX_VEL = 5; // Max velocity of circle
 const int MIN_VEL = -5; // Min velocity of circle
 const int MAX_RAD = 20; // Max radius of circle
@@ -26,13 +21,13 @@ const int MIN_RAD = 10; // Min radius of circle
 const int WALL_DISTANCE_FROM_EDGE = 100; // Wall distance from outside spawn area
 
 const bool OUTPUT_COLLISIONS = false; // Toggle output collisions in console mode
-const bool THREADED = true; // Toggle if collision detection uses mulithreading
-const bool LINE_SWEEP = false; // Toggle line sweep collision detection
+const bool THREADED = true; // Toggle if collision detection uses multithreading
+const bool LINE_SWEEP = true; // Toggle line sweep collision detection
 const bool WALLS = true; // Toggle walls
 const bool RANDOM_RADIUS = false; // Toggle random radius for circles
 const bool SPHERES = false;  // Toggle 3D spheres
-const bool CIRCLE_DEATH = false; // Toggle circle death when HP <= 0. No visualisation for circle death yet, they just dont effect collision or move anymore
-const bool MOVING_MOVING = true; // Toggle moving-moving collisions
+const bool CIRCLE_DEATH = false; // Toggle circle death when HP <= 0. No visualisation for circle death yet, they just dont affect collision or move anymore
+const bool MOVING_MOVING = false; // Toggle moving-moving collisions
 
 struct Float3
 {

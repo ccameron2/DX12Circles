@@ -448,7 +448,6 @@ void Circles::BlockCirclesLS(T* movingCircles, uint32_t numMovingCircles, T* sti
 			mRSweepSide = movingCircles->mRadius + 5;
 		}
 
-
 		auto start = still;
 		auto end = stillEnd;
 		T* mid;
@@ -466,26 +465,26 @@ void Circles::BlockCirclesLS(T* movingCircles, uint32_t numMovingCircles, T* sti
 		if (found)
 		{
 			// Search from circle found rightwards 
-			auto blocker = mid;
-			while (movingCircles->mPosition.x + mRSweepSide > blocker->mPosition.x && blocker != stillEnd)
+			auto lStill = mid;
+			while (movingCircles->mPosition.x + mRSweepSide > lStill->mPosition.x && lStill != stillEnd)
 			{
 				// Either use static variable or calculate using circle radii
 				auto minColDistance = 400;
-				if (RANDOM_RADIUS) minColDistance = (movingCircles->mRadius + blocker->mRadius) * (movingCircles->mRadius + blocker->mRadius);
+				if (RANDOM_RADIUS) minColDistance = (movingCircles->mRadius + lStill->mRadius) * (movingCircles->mRadius + lStill->mRadius);
 
 				// If circle death enabled
 				if (CIRCLE_DEATH)
 				{
 					// Check circle health and dont contribute to collisions if dead
-					if (blocker->mHealth <= 0) { blocker++; continue; }
+					if (lStill->mHealth <= 0) { lStill++; continue; }
 				}
 
 				// Extract positions
-				auto x2 = blocker->mPosition.x;
-				auto y2 = blocker->mPosition.y;
+				auto x2 = lStill->mPosition.x;
+				auto y2 = lStill->mPosition.y;
 				// Dont extract z if spheres not enabled
 				auto z2 = 0.0f;
-				if (SPHERES) z2 = blocker->mPosition.z;
+				if (SPHERES) z2 = lStill->mPosition.z;
 
 				// Calculate distance between circles or spheres
 				auto distanceBetweenCirclesSquared = 0.0f;
@@ -497,21 +496,21 @@ void Circles::BlockCirclesLS(T* movingCircles, uint32_t numMovingCircles, T* sti
 				{
 					// Reduce health of both circles
 					if(movingCircles->mHealth - 20 >= 0) movingCircles->mHealth -= 20;
-					if(blocker->mHealth - 20 >= 0) blocker->mHealth -= 20;
+					if(lStill->mHealth - 20 >= 0) lStill->mHealth -= 20;
 
 					// Record collision if enabled
-					if (OUTPUT_COLLISIONS) collisions.push_back(Collision{ movingCircles->mName, blocker->mName, movingCircles->mHealth, blocker->mHealth, mTimer->GetTime()});
+					if (OUTPUT_COLLISIONS) collisions.push_back(Collision{ movingCircles->mName, lStill->mName, movingCircles->mHealth, lStill->mHealth, mTimer->GetTime()});
 
-					// Reflect moving circle around blocker
+					// Reflect moving circle around lStill
 					// v - 2 * (v . n) * n
-					movingCircles->Reflect(blocker);
+					movingCircles->Reflect(lStill);
 
 					// Set collision to true
 					col = true;
 					break;
 				}
 				// Move to next circle
-				++blocker;
+				++lStill;
 			}
 
 			// If a collision happened
@@ -523,27 +522,27 @@ void Circles::BlockCirclesLS(T* movingCircles, uint32_t numMovingCircles, T* sti
 			}
 
 			// Search from circle found leftwards
-			blocker = mid;
-			while (blocker-- != stillCircles && movingCircles->mPosition.x - mLSweepSide < blocker->mPosition.x)
+			lStill = mid;
+			while (lStill-- != stillCircles && movingCircles->mPosition.x - mLSweepSide < lStill->mPosition.x)
 			{
 				// Either use static variable or calculate using circle radii
 				auto minColDistance = 400;
-				if (RANDOM_RADIUS) minColDistance = (movingCircles->mRadius + blocker->mRadius) * (movingCircles->mRadius + blocker->mRadius);
+				if (RANDOM_RADIUS) minColDistance = (movingCircles->mRadius + lStill->mRadius) * (movingCircles->mRadius + lStill->mRadius);
 				
 				// If circle death enabled
 				if (CIRCLE_DEATH)
 				{
 					// Check circle health and dont contribute to collisions if dead
-					if (blocker->mHealth <= 0) { blocker--; continue; }
+					if (lStill->mHealth <= 0) { lStill--; continue; }
 				}
 
 				// Extract positions
-				auto x2 = blocker->mPosition.x;
-				auto y2 = blocker->mPosition.y;
+				auto x2 = lStill->mPosition.x;
+				auto y2 = lStill->mPosition.y;
 
 				// Dont extract z if spheres not enabled
 				auto z2 = 0.0f;
-				if (SPHERES) z2 = blocker->mPosition.z;
+				if (SPHERES) z2 = lStill->mPosition.z;
 
 				// Calculate distance between circles or spheres
 				auto distanceBetweenCirclesSquared = 0.0f;
@@ -555,14 +554,14 @@ void Circles::BlockCirclesLS(T* movingCircles, uint32_t numMovingCircles, T* sti
 				{					
 					// Reduce health of both circles
 					if (movingCircles->mHealth - 20 >= 0) movingCircles->mHealth -= 20;
-					if (blocker->mHealth - 20 >= 0) blocker->mHealth -= 20;
+					if (lStill->mHealth - 20 >= 0) lStill->mHealth -= 20;
 
 					// Record collision if enabled
-					if (OUTPUT_COLLISIONS) collisions.push_back(Collision{ movingCircles->mName, blocker->mName, movingCircles->mHealth, blocker->mHealth, mTimer->GetTime() });
+					if (OUTPUT_COLLISIONS) collisions.push_back(Collision{ movingCircles->mName, lStill->mName, movingCircles->mHealth, lStill->mHealth, mTimer->GetTime() });
 					
-					// Reflect moving circle around blocker
+					// Reflect moving circle around lStill
 					// v - 2 * (v . n) * n
-					movingCircles->Reflect(blocker);
+					movingCircles->Reflect(lStill);
 
 					// Set collision to true
 					col = true;
@@ -646,11 +645,7 @@ void Circles::BlockCirclesLS(T* movingCircles, uint32_t numMovingCircles, T* sti
 			continue;
 		}
 
-
-
-
-
-
+		// Moving-Moving line sweep here
 
 		++movingCircles;
 	}
@@ -731,7 +726,7 @@ void Circles::BlockCircles(T* movingCircles, uint32_t numMovingCircles, T* first
 				// Record collision if enabled
 				if(OUTPUT_COLLISIONS) collisions.push_back(Collision{ movingCircles->mName, still->mName, movingCircles->mHealth, still->mHealth, mTimer->GetTime() });
 				
-				// Reflect moving circle around blocker
+				// Reflect moving circle around lStill
 				// v - 2 * (v . n) * n			
 				movingCircles->Reflect(still);
 
