@@ -107,15 +107,15 @@ void App::LoadModels()
 
 	mMasterBall = new Model("Models/Sphere.x", commandList);
 	mMasterBall->mMeshes[0]->mMaterial = new Material();
-	mMasterBall->mMeshes[0]->mMaterial->DiffuseAlbedo = 
-		XMFLOAT4{ mCircles->mMovingCircles[0].mColour.x,mCircles->mMovingCircles[0].mColour.y,mCircles->mMovingCircles[0].mColour.z,0};
+	if(SPHERES) mMasterBall->mMeshes[0]->mMaterial->DiffuseAlbedo = XMFLOAT4{ mCircles->mMovingSpheres[0].mColour.x,mCircles->mMovingSpheres[0].mColour.y,mCircles->mMovingSpheres[0].mColour.z,0 };
+	else mMasterBall->mMeshes[0]->mMaterial->DiffuseAlbedo = XMFLOAT4{ mCircles->mMovingCircles[0].mColour.x,mCircles->mMovingCircles[0].mColour.y,mCircles->mMovingCircles[0].mColour.z,0 };
 	mMasterBall->SetScale(XMFLOAT3{ 1.0f, 1.0f, 1.0f });
 	//mModels.push_back(mMasterBall);
 
 	mMasterBall2 = new Model("Models/sphere.x", commandList);
 	mMasterBall2->mMeshes[0]->mMaterial = new Material();
-	mMasterBall2->mMeshes[0]->mMaterial->DiffuseAlbedo = 
-		XMFLOAT4{ mCircles->mStillCircles[0].mColour.x,mCircles->mStillCircles[0].mColour.y,mCircles->mStillCircles[0].mColour.z,0 };
+	if(SPHERES) mMasterBall2->mMeshes[0]->mMaterial->DiffuseAlbedo = XMFLOAT4{ mCircles->mStillSpheres[0].mColour.x,mCircles->mStillSpheres[0].mColour.y,mCircles->mStillSpheres[0].mColour.z,0 };
+	else mMasterBall2->mMeshes[0]->mMaterial->DiffuseAlbedo = XMFLOAT4{ mCircles->mStillCircles[0].mColour.x,mCircles->mStillCircles[0].mColour.y,mCircles->mStillCircles[0].mColour.z,0 };
 	mMasterBall2->SetPosition(XMFLOAT3{ 8,0,0 });
 	mMasterBall2->SetScale(XMFLOAT3{ 1.0f, 1.0f, 1.0f });
 	//mModels.push_back(mMasterBall2);
@@ -123,8 +123,17 @@ void App::LoadModels()
 	for (int i = 0; i < NUM_CIRCLES / 2; i++)
 	{
 		Model* ballModel = new Model("", mGraphics->mCommandList.Get(), mMasterBall->mMeshes[0]);
-		ballModel->SetPosition(XMFLOAT3{ mCircles->mMovingCircles[i].mPosition.x,mCircles->mMovingCircles[i].mPosition.y,mCircles->mMovingCircles[i].mPosition.z});
-		ballModel->SetScale(XMFLOAT3{ float(mCircles->mMovingCircles[i].mRadius / 10.0f), float(mCircles->mMovingCircles[i].mRadius / 10.0f), float(mCircles->mMovingCircles[i].mRadius / 10.0f) });
+		if (SPHERES)
+		{
+			ballModel->SetPosition(XMFLOAT3{ mCircles->mMovingSpheres[i].mPosition.x,mCircles->mMovingSpheres[i].mPosition.y,mCircles->mMovingSpheres[i].mPosition.z });
+			ballModel->SetScale(XMFLOAT3{ float(mCircles->mMovingSpheres[i].mRadius / 10.0f), float(mCircles->mMovingSpheres[i].mRadius / 10.0f), float(mCircles->mMovingSpheres[i].mRadius / 10.0f) });
+		}
+		else
+		{
+			ballModel->SetPosition(XMFLOAT3{ mCircles->mMovingCircles[i].mPosition.x,mCircles->mMovingCircles[i].mPosition.y,mCircles->mMovingCircles[i].mPosition.z });
+			ballModel->SetScale(XMFLOAT3{ float(mCircles->mMovingCircles[i].mRadius / 10.0f), float(mCircles->mMovingCircles[i].mRadius / 10.0f), float(mCircles->mMovingCircles[i].mRadius / 10.0f) });
+		}
+		
 		mModels.push_back(ballModel);
 		mMovingModels.push_back(ballModel);
 	}
@@ -132,8 +141,17 @@ void App::LoadModels()
 	for (int i = 0; i < NUM_CIRCLES / 2; i++)
 	{
 		Model* ballModel = new Model("", mGraphics->mCommandList.Get(), mMasterBall2->mMeshes[0]);
-		ballModel->SetPosition(XMFLOAT3{ mCircles->mStillCircles[i].mPosition.x,mCircles->mStillCircles[i].mPosition.y,mCircles->mStillCircles[i].mPosition.z });
-		ballModel->SetScale(XMFLOAT3{ float(mCircles->mStillCircles[i].mRadius / 10.0f), float(mCircles->mStillCircles[i].mRadius / 10.0f), float(mCircles->mStillCircles[i].mRadius / 10.0f) });
+		if (SPHERES)
+		{
+			ballModel->SetPosition(XMFLOAT3{ mCircles->mStillSpheres[i].mPosition.x,mCircles->mStillSpheres[i].mPosition.y,mCircles->mStillSpheres[i].mPosition.z });
+			ballModel->SetScale(XMFLOAT3{ float(mCircles->mStillSpheres[i].mRadius / 10.0f), float(mCircles->mStillSpheres[i].mRadius / 10.0f), float(mCircles->mStillSpheres[i].mRadius / 10.0f) });
+
+		}
+		else
+		{
+			ballModel->SetPosition(XMFLOAT3{ mCircles->mStillCircles[i].mPosition.x,mCircles->mStillCircles[i].mPosition.y,mCircles->mStillCircles[i].mPosition.z });
+			ballModel->SetScale(XMFLOAT3{ float(mCircles->mStillCircles[i].mRadius / 10.0f), float(mCircles->mStillCircles[i].mRadius / 10.0f), float(mCircles->mStillCircles[i].mRadius / 10.0f) });
+		}
 		mModels.push_back(ballModel);
 		mStillModels.push_back(ballModel);
 	}
@@ -270,22 +288,42 @@ void App::Update(float frameTime)
 	if (mWindow->mUp)	mCamera->MoveUp();
 	if (mWindow->mDown)	mCamera->MoveDown();
 
-	mCircles->UpdateCircles(/*frameTime*/);
+	mCircles->UpdateCircles(frameTime);
 
 	for (int i = 0; i < NUM_CIRCLES / 2; i++)
 	{
-		mMovingModels[i]->SetPosition
-		(
-			XMFLOAT3{ mCircles->mMovingCircles[i].mPosition.x,mCircles->mMovingCircles[i].mPosition.y,mCircles->mMovingCircles[i].mPosition.z }
-		);
+		if (SPHERES)
+		{
+			mMovingModels[i]->SetPosition
+			(
+				XMFLOAT3{ mCircles->mMovingSpheres[i].mPosition.x,mCircles->mMovingSpheres[i].mPosition.y,mCircles->mMovingSpheres[i].mPosition.z }
+			);
+		}
+		else
+		{
+			mMovingModels[i]->SetPosition
+			(
+				XMFLOAT3{ mCircles->mMovingCircles[i].mPosition.x,mCircles->mMovingCircles[i].mPosition.y,mCircles->mMovingCircles[i].mPosition.z }
+			);
+		}
 		mMovingModels[i]->mNumDirtyFrames += FrameResources.size();
 	}
 	for (int i = 0; i < NUM_CIRCLES / 2; i++)
 	{
-		mStillModels[i]->SetPosition
-		(
-			XMFLOAT3{ mCircles->mStillCircles[i].mPosition.x,mCircles->mStillCircles[i].mPosition.y,mCircles->mStillCircles[i].mPosition.z }
-		);
+		if (SPHERES)
+		{
+			mStillModels[i]->SetPosition
+			(
+				XMFLOAT3{ mCircles->mStillSpheres[i].mPosition.x,mCircles->mStillSpheres[i].mPosition.y,mCircles->mStillSpheres[i].mPosition.z }
+			);
+		}
+		else
+		{
+			mStillModels[i]->SetPosition
+			(
+				XMFLOAT3{ mCircles->mStillCircles[i].mPosition.x,mCircles->mStillCircles[i].mPosition.y,mCircles->mStillCircles[i].mPosition.z }
+			);
+		}
 		mStillModels[i]->mNumDirtyFrames += FrameResources.size();
 	}
 
