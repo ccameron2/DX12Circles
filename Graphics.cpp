@@ -190,13 +190,13 @@ bool Graphics::CreateDeviceAndFence()
 		ComPtr<ID3D12Debug3> debugController;
 		D3D12GetDebugInterface(IID_PPV_ARGS(&debugController));
 		//debugController->SetEnableAutoName(true);
-		//debugController->SetEnableGPUBasedValidation(true);
+		debugController->SetEnableGPUBasedValidation(true);
 		debugController->EnableDebugLayer();
 	}
 #endif
 
 	// Create DGXIFactory
-	if (FAILED(CreateDXGIFactory1(IID_PPV_ARGS(&mDXGIFactory))))
+	if (FAILED(CreateDXGIFactory2(DXGI_CREATE_FACTORY_DEBUG, IID_PPV_ARGS(&mDXGIFactory))))
 	{
 		MessageBox(0, L"Factory creation failed", L"Error", MB_OK);
 	}

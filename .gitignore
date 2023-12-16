@@ -31,6 +31,5 @@
 *.app
 
 .vs/
-x64/
-External/
+x64/ 
 Models/nebula.dds
