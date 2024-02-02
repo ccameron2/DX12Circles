@@ -236,7 +236,7 @@ private:
 	};
 
 	// Multithreading data
-	static const uint32_t MAX_WORKERS = 31;
+	static const uint32_t MAX_WORKERS = 63;
 	std::pair<WorkerThread, BlockCirclesWork<Circle>> mBlockCirclesWorkers[MAX_WORKERS];
 	std::pair<WorkerThread, BlockCirclesWork<Sphere>> mBlockSpheresWorkers[MAX_WORKERS];
 	uint32_t mNumWorkers;

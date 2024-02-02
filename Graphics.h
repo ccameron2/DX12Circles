@@ -148,7 +148,7 @@ private:
 
 	ComPtr<ID3D12Resource> mSwapChainBuffer[mSwapChainBufferCount];
 
-	static const unsigned int mMaxThreads = 64;
+	static const unsigned int mMaxThreads = 127;
 	static const unsigned int mMaxCommandListsPerThread = 2;
 
 	// Multithreading command objects
