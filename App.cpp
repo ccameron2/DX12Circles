@@ -474,51 +474,53 @@ void App::Draw(float frameTime)
 	cubeTex.Offset(mSkyMat->DiffuseSRVIndex, CbvSrvUavDescriptorSize);
 	commandList->SetGraphicsRootDescriptorTable(4, cubeTex);
 
-	// Execute commands
-	mGraphics->CloseAndExecuteCommandList(0, 0);
+	DrawModels(commandList);
 
-	// Thread circle rendering
-	int start = 0;
-	int count = (mModels.size() - 1 + mNumRenderWorkers - 1) / mNumRenderWorkers;
-	for (int i = 0; i < mNumRenderWorkers; ++i)
-	{
-		// Prepare work
-		auto& work = mRenderWorkers[i].second;
-		work.start = start;
-		start += count;
-		if (start > mModels.size() - 1)  start = mModels.size() - 1;
-		work.end = start;
+	//// Execute commands
+	//mGraphics->CloseAndExecuteCommandList(0, 0);
 
-		// Flag the work as not yet complete
-		auto& workerThread = mRenderWorkers[i].first;
-		{
-			// Mutex work complete
-			std::unique_lock<std::mutex> l(workerThread.lock);
-			work.complete = false;
-		}
+	//// Thread circle rendering
+	//int start = 0;
+	//int count = (mModels.size() - 1 + mNumRenderWorkers - 1) / mNumRenderWorkers;
+	//for (int i = 0; i < mNumRenderWorkers; ++i)
+	//{
+	//	// Prepare work
+	//	auto& work = mRenderWorkers[i].second;
+	//	work.start = start;
+	//	start += count;
+	//	if (start > mModels.size() - 1)  start = mModels.size() - 1;
+	//	work.end = start;
 
-		// Signal the worker to start work
-		workerThread.workReady.notify_one();
-	}
+	//	// Flag the work as not yet complete
+	//	auto& workerThread = mRenderWorkers[i].first;
+	//	{
+	//		// Mutex work complete
+	//		std::unique_lock<std::mutex> l(workerThread.lock);
+	//		work.complete = false;
+	//	}
 
-	// Wait for each worker to finish
-	for (int i = 0; i < mNumRenderWorkers; ++i)
-	{
-		auto& workerThread = mRenderWorkers[i].first;
-		auto& work = mRenderWorkers[i].second;
+	//	// Signal the worker to start work
+	//	workerThread.workReady.notify_one();
+	//}
 
-		// Wait for work completed signal
-		std::unique_lock<std::mutex> l(workerThread.lock);
-		workerThread.workReady.wait(l, [&]() { return work.complete; });
-	}
+	//// Wait for each worker to finish
+	//for (int i = 0; i < mNumRenderWorkers; ++i)
+	//{
+	//	auto& workerThread = mRenderWorkers[i].first;
+	//	auto& work = mRenderWorkers[i].second;
 
-	// Start a new command list
-	commandList = mGraphics->StartCommandList(0, 1);
+	//	// Wait for work completed signal
+	//	std::unique_lock<std::mutex> l(workerThread.lock);
+	//	workerThread.workReady.wait(l, [&]() { return work.complete; });
+	//}
 
-	// Setup command list
-	mGraphics->SetDescriptorHeapsAndRootSignature(0, 1);
-	mGraphics->SetViewportAndScissorRects(commandList);
-	mGraphics->SetMSAARenderTarget(commandList);
+	//// Start a new command list
+	//commandList = mGraphics->StartCommandList(0, 1);
+
+	//// Setup command list
+	//mGraphics->SetDescriptorHeapsAndRootSignature(0, 1);
+	//mGraphics->SetViewportAndScissorRects(commandList);
+	//mGraphics->SetMSAARenderTarget(commandList);
 
 	// Set skybox pipeline state for sky 
 	commandList->SetPipelineState(mGraphics->mSkyPSO.Get());
@@ -531,7 +533,7 @@ void App::Draw(float frameTime)
 	mGUI->Render(commandList, mGraphics->CurrentBackBuffer(), mGraphics->CurrentBackBufferView(), mGraphics->mDSVHeap.Get(), mGraphics->mDsvDescriptorSize);
 
 	// Execute commands
-	mGraphics->CloseAndExecuteCommandList(0, 1);
+	mGraphics->CloseAndExecuteCommandList(0, 0);
 
 	// Swap back buffers with GUI vsync option
 	mGraphics->SwapBackBuffers(mGUI->mVSync);
